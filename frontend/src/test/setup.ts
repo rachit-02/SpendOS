@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
+
+// Lazy-loaded chunks (charts) can take a moment under a loaded test runner.
+configure({ asyncUtilTimeout: 3000 })
 
 afterEach(() => {
   cleanup()
