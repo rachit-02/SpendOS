@@ -19,6 +19,8 @@ const BudgetsPage = lazy(() => import('@/pages/BudgetsPage'))
 const InsightsPage = lazy(() => import('@/pages/InsightsPage'))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const RecurringPage = lazy(() => import('@/pages/RecurringPage'))
+const PlanningPage = lazy(() => import('@/pages/PlanningPage'))
+const GoalsPage = lazy(() => import('@/pages/GoalsPage'))
 const StatusPage = lazy(() => import('@/pages/StatusPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -39,6 +41,8 @@ export function AppRoutes() {
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/planning" element={<PlanningPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
