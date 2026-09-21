@@ -9,7 +9,14 @@ import com.spendos.transactions.dto.TransactionDtos.CreateTransactionRequest;
 import com.spendos.transactions.dto.TransactionDtos.TransactionResponse;
 import com.spendos.transactions.dto.TransactionDtos.UpdateTransactionRequest;
 import com.spendos.transactions.dto.TransactionFilter;
+import com.spendos.transactions.service.TransactionExportService;
 import com.spendos.transactions.service.TransactionService;
+import com.spendos.transactions.service.TransactionSuggestionService;
+import com.spendos.transactions.service.TransactionSuggestionService.Suggestions;
+import java.nio.charset.StandardCharsets;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -36,9 +43,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final TransactionExportService exportService;
+    private final TransactionSuggestionService suggestionService;
 
-    public TransactionController(TransactionService transactionService) {
+    public TransactionController(TransactionService transactionService, TransactionExportService exportService,
+                                 TransactionSuggestionService suggestionService) {
         this.transactionService = transactionService;
+        this.exportService = exportService;
+        this.suggestionService = suggestionService;
     }
 
     @GetMapping
@@ -63,6 +75,40 @@ public class TransactionController {
                 minAmount, maxAmount, transactionType, paymentMethod, searchText, isRecurring);
         return ResponseEntity.ok(ApiResponse.page(
                 transactionService.list(userId, filter, page, pageSize, sortBy, sortOrder)));
+    }
+
+    /** CSV download of the filtered transactions, or of the given IDs when {@code ids} is present. */
+    @GetMapping(value = "/export", produces = "text/csv")
+    public ResponseEntity<byte[]> export(
+            @AuthenticationPrincipal UUID userId,
+            @RequestParam(required = false) List<UUID> ids,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID merchantId,
+            @RequestParam(required = false) UUID accountId,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(required = false) String transactionType,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String searchText) {
+        TransactionFilter filter = new TransactionFilter(startDate, endDate, categoryId, merchantId, accountId,
+                minAmount, maxAmount, transactionType, paymentMethod, searchText, null);
+        byte[] csv = exportService.exportCsv(userId, filter, ids).getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("spendos-transactions-" + LocalDate.now() + ".csv").build().toString())
+                .body(csv);
+    }
+
+    @GetMapping("/suggestions")
+    public ResponseEntity<ApiResponse<Suggestions>> suggestions(
+            @AuthenticationPrincipal UUID userId,
+            @RequestParam(required = false, name = "q") String query,
+            @RequestParam(defaultValue = "8") int limit) {
+        return ResponseEntity.ok(ApiResponse.success(
+                suggestionService.suggest(userId, query, Math.max(1, Math.min(limit, 20)))));
     }
 
     @GetMapping("/{transactionId}")
