@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountPurgeService {
 
     static final Duration RETENTION = Duration.ofDays(30);
+    /** Demo accounts hold only synthetic data and are removed a day after creation. */
+    static final Duration DEMO_LIFETIME = Duration.ofDays(1);
     private static final Logger log = LoggerFactory.getLogger(AccountPurgeService.class);
 
     private final JdbcTemplate jdbc;
@@ -39,9 +41,12 @@ public class AccountPurgeService {
     /** @return how many accounts were purged */
     @Transactional
     public int purge(LocalDateTime nowUtc) {
-        List<UUID> due = jdbc.queryForList(
-                "SELECT id FROM users WHERE deleted_at IS NOT NULL AND deleted_at < ?", UUID.class,
-                Timestamp.valueOf(nowUtc.minus(RETENTION)));
+        List<UUID> due = jdbc.queryForList("""
+                SELECT u.id FROM users u
+                WHERE (u.deleted_at IS NOT NULL AND u.deleted_at < ?)
+                   OR (u.created_at < ? AND EXISTS (
+                        SELECT 1 FROM user_preferences p WHERE p.user_id = u.id AND p.demo_mode))""", UUID.class,
+                Timestamp.valueOf(nowUtc.minus(RETENTION)), Timestamp.valueOf(nowUtc.minus(DEMO_LIFETIME)));
         for (UUID userId : due) {
             // Transactions first: they reference accounts with ON DELETE RESTRICT.
             jdbc.update("DELETE FROM transactions WHERE user_id = ?", userId);

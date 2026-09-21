@@ -149,6 +149,7 @@ features:
   money-leak-detection-enabled: ${FEATURE_MONEY_LEAK_DETECTION_ENABLED:true}
   spending-prediction-enabled: ${FEATURE_SPENDING_PREDICTION_ENABLED:true}
   health-score-enabled: ${FEATURE_HEALTH_SCORE_ENABLED:true}
+  demo-mode-enabled: ${FEATURE_DEMO_MODE_ENABLED:true}
 
 # Financial assistant. Answers are always computed by the backend; the optional language model only
 # rewords them (and is rejected if it adds any number). Off by default: enabling it sends the question
