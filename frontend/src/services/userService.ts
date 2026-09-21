@@ -1,4 +1,4 @@
-import { api, unwrap } from './api'
+import { api, downloadFile, unwrap } from './api'
 import type { Preferences, User } from '@/types/auth'
 
 export const userService = {
@@ -10,4 +10,6 @@ export const userService = {
     unwrap<{ message: string }>(api.delete('/users/me', { data: { confirmPassword } })),
   preferences: () => unwrap<Preferences>(api.get('/users/me/preferences')),
   updatePreferences: (input: Partial<Preferences>) => unwrap<Preferences>(api.put('/users/me/preferences', input)),
+  /** Downloads a ZIP of everything SpendOS stores about the user. */
+  exportData: () => downloadFile('/users/me/export', {}, `spendos-export-${new Date().toISOString().slice(0, 10)}.zip`),
 }

@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +22,7 @@ export function SecuritySettings() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [confirmText, setConfirmText] = useState('')
   const [deleteError, setDeleteError] = useState<string>()
+  const exportData = useMutation({ mutationFn: () => userService.exportData() })
 
   async function handleChangePassword(event: FormEvent) {
     event.preventDefault()
@@ -78,6 +81,23 @@ export function SecuritySettings() {
               <Button type="submit" disabled={busy || !currentPassword}>Change password</Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Download your data</CardTitle>
+          <CardDescription>
+            A ZIP with your profile, accounts, transactions, budgets, goals, insights, corrections and activity log, as
+            CSV and JSON files.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Button variant="outline" onClick={() => exportData.mutate()} disabled={exportData.isPending}>
+            <Download className="h-4 w-4" aria-hidden="true" /> {exportData.isPending ? 'Preparing…' : 'Download my data'}
+          </Button>
+          {exportData.isError && <FieldError message={errorMessage(exportData.error)} />}
+          {exportData.isSuccess && <p className="text-sm text-muted-foreground" role="status">Your download has started.</p>}
         </CardContent>
       </Card>
 

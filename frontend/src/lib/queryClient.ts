@@ -8,5 +8,3 @@ export function createQueryClient() {
   })
 }
 
-/** Opt into React Router v7 behaviour now so the upgrade is a no-op. */
-export const routerFuture = { v7_startTransition: true, v7_relativeSplatPath: true } as const

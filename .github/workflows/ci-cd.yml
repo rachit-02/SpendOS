@@ -117,7 +117,7 @@ jobs:
 
     - name: Run npm audit (production dependencies)
       working-directory: ./frontend
-      run: npm audit --omit=dev --audit-level=high
+      run: npm audit --omit=dev --audit-level=moderate
 
   # Docker Build
   docker-build:
