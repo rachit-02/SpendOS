@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/feedback'
 import { ProgressBar } from '@/components/ui/progress'
 import { formatCurrency, formatDate } from '@/utils/formatters'
+import { InsightCard } from '@/components/insights/InsightCard'
 import type { Dashboard } from '@/types/dashboard'
+import type { InsightType } from '@/types/insights'
 
 export function BudgetsPreview({ budgets, currency }: { budgets: Dashboard['budgets']; currency: string }) {
   return (
@@ -57,5 +59,22 @@ export function RecurringPreview({ payments, currency }: { payments: Dashboard['
         </ul>
       </CardContent>
     </Card>
+  )
+}
+
+export function InsightsPreview({ insights }: { insights: Dashboard['insights'] }) {
+  return (
+    <section aria-label="Top insights" className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Worth your attention</h2>
+        <Link to="/insights" className="text-sm font-medium text-primary hover:underline">All insights</Link>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-3">
+        {insights.map((insight) => (
+          <InsightCard key={insight.id} compact type={insight.type as InsightType} title={insight.title}
+            description={insight.description} />
+        ))}
+      </div>
+    </section>
   )
 }

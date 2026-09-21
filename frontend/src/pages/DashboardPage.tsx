@@ -11,7 +11,7 @@ import { HealthScoreCard } from '@/components/dashboard/HealthScoreCard'
 import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown'
 import { TopMerchants } from '@/components/dashboard/TopMerchants'
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
-import { BudgetsPreview, RecurringPreview } from '@/components/dashboard/DashboardSections'
+import { BudgetsPreview, InsightsPreview, RecurringPreview } from '@/components/dashboard/DashboardSections'
 import { dashboardService } from '@/services/dashboardService'
 import { errorMessage } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
@@ -59,6 +59,7 @@ export default function DashboardPage() {
       {header}
       <div className="space-y-6">
         <OverviewCards summary={data.summary} />
+        {data.insights.length > 0 && <InsightsPreview insights={data.insights} />}
 
         {!hasActivity ? (
           <EmptyState
