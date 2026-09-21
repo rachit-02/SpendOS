@@ -58,6 +58,8 @@ export default defineConfig(({ mode }) => ({
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/test/**', 'src/**/*.test.{ts,tsx}', 'src/main.tsx', 'src/vite-env.d.ts'],
+      // DEVELOPMENT_PLAN.md Phase 16: frontend coverage 70%+
+      thresholds: { lines: 70, statements: 70 },
     },
   },
 }))
