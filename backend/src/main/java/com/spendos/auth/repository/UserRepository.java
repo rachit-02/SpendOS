@@ -1,6 +1,6 @@
 package com.spendos.auth.repository;
 
-import com.spendos.auth.entity.User;
+import com.spendos.auth.domain.User;
 import com.spendos.common.repository.BaseRepository;
 import java.util.Optional;
 import java.util.UUID;

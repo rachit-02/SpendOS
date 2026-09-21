@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.spendos.auth.dto.LoginRequest;
 import com.spendos.auth.dto.RegisterRequest;
-import com.spendos.auth.entity.User;
+import com.spendos.auth.domain.User;
 import com.spendos.auth.repository.RevokedTokenRepository;
 import com.spendos.auth.repository.UserRepository;
 import com.spendos.common.exception.ApiException;

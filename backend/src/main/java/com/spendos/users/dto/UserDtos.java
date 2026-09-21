@@ -1,6 +1,6 @@
 package com.spendos.users.dto;
 
-import com.spendos.users.entity.UserPreferences;
+import com.spendos.users.domain.UserPreferences;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

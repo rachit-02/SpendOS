@@ -1,4 +1,4 @@
-package com.spendos.users.entity;
+package com.spendos.users.domain;
 
 import com.spendos.common.entity.BaseEntity;
 import jakarta.persistence.Column;

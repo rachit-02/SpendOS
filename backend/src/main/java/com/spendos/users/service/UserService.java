@@ -1,7 +1,7 @@
 package com.spendos.users.service;
 
 import com.spendos.auth.dto.UserResponse;
-import com.spendos.auth.entity.User;
+import com.spendos.auth.domain.User;
 import com.spendos.auth.repository.UserRepository;
 import com.spendos.auth.service.PasswordPolicy;
 import com.spendos.common.exception.ApiException;

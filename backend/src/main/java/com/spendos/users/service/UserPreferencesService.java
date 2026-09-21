@@ -3,7 +3,7 @@ package com.spendos.users.service;
 import com.spendos.common.exception.ApiException;
 import com.spendos.users.dto.UserDtos.PreferencesResponse;
 import com.spendos.users.dto.UserDtos.UpdatePreferencesRequest;
-import com.spendos.users.entity.UserPreferences;
+import com.spendos.users.domain.UserPreferences;
 import com.spendos.users.repository.UserPreferencesRepository;
 import java.time.DateTimeException;
 import java.time.ZoneId;

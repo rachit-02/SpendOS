@@ -1,6 +1,6 @@
 package com.spendos.auth.dto;
 
-import com.spendos.auth.entity.User;
+import com.spendos.auth.domain.User;
 import com.spendos.common.util.Times;
 import java.time.Instant;
 import java.util.UUID;

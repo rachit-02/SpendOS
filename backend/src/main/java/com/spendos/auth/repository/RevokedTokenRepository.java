@@ -1,6 +1,6 @@
 package com.spendos.auth.repository;
 
-import com.spendos.auth.entity.RevokedToken;
+import com.spendos.auth.domain.RevokedToken;
 import java.time.Instant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
