@@ -11,6 +11,7 @@ import {
   Receipt,
   Upload,
   Settings,
+  Store,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -32,6 +33,7 @@ export const navItems: NavItem[] = [
   { to: '/assistant', label: 'Assistant', icon: MessageCircle },
   { to: '/reports', label: 'Reports', icon: FileText },
   { to: '/recurring', label: 'Recurring', icon: Repeat },
+  { to: '/merchants', label: 'Merchants', icon: Store },
   { to: '/import', label: 'Import', icon: Upload },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
