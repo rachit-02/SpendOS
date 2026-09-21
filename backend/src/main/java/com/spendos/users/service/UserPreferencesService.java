@@ -89,6 +89,11 @@ public class UserPreferencesService {
     }
 
     @Transactional(readOnly = true)
+    public boolean healthScoreEnabled(UUID userId) {
+        return repository.findByUserId(userId).map(UserPreferences::isFinancialHealthScoreEnabled).orElse(true);
+    }
+
+    @Transactional(readOnly = true)
     public String currencyFor(UUID userId) {
         return repository.findByUserId(userId).map(UserPreferences::getCurrencyCode).orElse("INR");
     }
