@@ -53,7 +53,7 @@ export function AppLayout() {
         Skip to content
       </a>
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r bg-card p-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-60 print:!hidden flex-col border-r bg-card p-4 lg:flex">
         <Logo className="mb-8 px-2" />
         <NavLinks />
       </aside>
@@ -74,8 +74,8 @@ export function AppLayout() {
         </div>
       )}
 
-      <div className="lg:pl-60">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur">
+      <div className="lg:pl-60 print:pl-0">
+        <header className="sticky top-0 z-30 print:hidden flex h-14 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur">
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>

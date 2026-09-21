@@ -17,6 +17,7 @@ const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'))
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const BudgetsPage = lazy(() => import('@/pages/BudgetsPage'))
 const InsightsPage = lazy(() => import('@/pages/InsightsPage'))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const RecurringPage = lazy(() => import('@/pages/RecurringPage'))
 const StatusPage = lazy(() => import('@/pages/StatusPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -36,6 +37,7 @@ export function AppRoutes() {
           <Route path="/transactions/:transactionId" element={<TransactionsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/insights" element={<InsightsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
           <Route path="/import" element={<ImportPage />} />
