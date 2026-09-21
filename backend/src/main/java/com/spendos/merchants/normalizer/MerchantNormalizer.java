@@ -29,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class MerchantNormalizer {
 
     private static final Logger log = LoggerFactory.getLogger(MerchantNormalizer.class);
+    public static final String SIMILAR = "similar";
+    static final double FUZZY_THRESHOLD = 0.8;
+    static final int MIN_FUZZY_LENGTH = 5;
 
     /** Result: the display name to use and, when a rule matched, the canonical merchant. */
     public record Result(String merchantName, Merchant merchant, String matchType, BigDecimal confidence) {
@@ -67,7 +70,33 @@ public class MerchantNormalizer {
         }
         Optional<Merchant> byName = Optional.ofNullable(merchantsByLowerName().get(cleaned.toLowerCase(Locale.ROOT)));
         return byName.map(m -> new Result(m.getMerchantName(), m, MerchantNormalizationRule.EXACT, new BigDecimal("0.90")))
+                .or(() -> similar(cleaned))
                 .orElseGet(() -> new Result(cleaned, null, "cleaned", new BigDecimal("0.50")));
+    }
+
+    /**
+     * Last resort for typos and truncation ("SWIGY" → Swiggy): the closest known merchant by
+     * Levenshtein ratio, only for names of at least five letters and a ratio of 0.8 or more.
+     * Confidence scales with similarity and stays below rule matches.
+     */
+    private Optional<Result> similar(String cleaned) {
+        if (cleaned.length() < MIN_FUZZY_LENGTH) {
+            return Optional.empty();
+        }
+        Merchant best = null;
+        double bestRatio = 0;
+        for (Merchant merchant : merchantsById.values()) {
+            double ratio = Similarity.ratio(cleaned, merchant.getMerchantName());
+            if (ratio > bestRatio) {
+                bestRatio = ratio;
+                best = merchant;
+            }
+        }
+        if (best == null || bestRatio < FUZZY_THRESHOLD) {
+            return Optional.empty();
+        }
+        BigDecimal confidence = BigDecimal.valueOf(bestRatio * 0.9).setScale(2, java.math.RoundingMode.HALF_UP);
+        return Optional.of(new Result(best.getMerchantName(), best, SIMILAR, confidence));
     }
 
     private static boolean matches(CompiledRule compiled, String haystack, String cleanedLower) {

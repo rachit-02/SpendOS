@@ -108,10 +108,10 @@ class TransactionIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(put("/v1/transactions/" + id).header("Authorization", session.bearer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("categoryId", testData.categoryId("Shopping"), "description", "Updated description",
-                                "merchantName", "Zomato Online")))
+                                "merchantName", "Blue Tokai Coffee")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.categoryName").value("Shopping"))
-                .andExpect(jsonPath("$.data.merchantName").value("Zomato Online"))
+                .andExpect(jsonPath("$.data.merchantName").value("Blue Tokai Coffee"))
                 .andExpect(jsonPath("$.data.description").value("Updated description"))
                 .andExpect(jsonPath("$.data.amount").value(450.0));
 

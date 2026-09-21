@@ -105,9 +105,10 @@ public class TransactionService {
         transaction.setExternalReference(blankToNull(request.externalReference()));
 
         // New global merchants start uncategorized: one user's choice must not categorize other users' data.
-        Merchant merchant = merchantService.findOrCreate(request.merchantName(), null);
+        MerchantService.Resolved resolved = merchantService.resolve(userId, request.merchantName());
+        Merchant merchant = resolved.merchant();
         transaction.setMerchantId(merchant.getId());
-        applyCategory(transaction, request.categoryId(), request.subcategoryId(), merchant);
+        applyCategory(transaction, request.categoryId(), request.subcategoryId(), merchant, resolved.mappedCategoryId());
 
         Transaction saved = transactionRepository.saveAndFlush(transaction);
         auditService.record(userId, "transaction", saved.getId(), AuditService.CREATE, null, snapshot(saved));
@@ -146,14 +147,14 @@ public class TransactionService {
             transaction.setRecurring(request.isRecurring());
         }
         if (request.merchantName() != null) {
-            Merchant merchant = merchantService.findOrCreate(request.merchantName(), null);
+            Merchant merchant = merchantService.resolve(userId, request.merchantName()).merchant();
             transaction.setMerchantId(merchant.getId());
             transaction.setMerchant(merchant);
         }
         if (request.categoryId() != null) {
-            applyCategory(transaction, request.categoryId(), request.subcategoryId(), null);
+            applyCategory(transaction, request.categoryId(), request.subcategoryId(), null, null);
         } else if (request.subcategoryId() != null) {
-            applyCategory(transaction, transaction.getCategoryId(), request.subcategoryId(), null);
+            applyCategory(transaction, transaction.getCategoryId(), request.subcategoryId(), null, null);
         }
 
         Transaction saved = transactionRepository.saveAndFlush(transaction);
@@ -191,7 +192,7 @@ public class TransactionService {
         for (Transaction transaction : owned) {
             Map<String, Object> before = snapshot(transaction);
             if (updates.categoryId() != null) {
-                applyCategory(transaction, updates.categoryId(), updates.subcategoryId(), null);
+                applyCategory(transaction, updates.categoryId(), updates.subcategoryId(), null, null);
             }
             if (updates.paymentMethod() != null) {
                 transaction.setPaymentMethod(updates.paymentMethod());
@@ -233,7 +234,8 @@ public class TransactionService {
     }
 
     /** User-chosen category wins; otherwise the merchant's category; otherwise "Other"/"Income". */
-    private void applyCategory(Transaction transaction, UUID categoryId, UUID subcategoryId, Merchant merchant) {
+    private void applyCategory(Transaction transaction, UUID categoryId, UUID subcategoryId, Merchant merchant,
+                               UUID mappedCategoryId) {
         if (categoryId != null) {
             Category category = categoryService.require(categoryId);
             if (subcategoryId != null) {
@@ -243,6 +245,13 @@ public class TransactionService {
             transaction.setCategory(category);
             transaction.setSubcategoryId(subcategoryId);
             transaction.setCategorizationSource(Transaction.SOURCE_USER);
+            transaction.setCategorizationConfidence(BigDecimal.ONE);
+            return;
+        }
+        if (mappedCategoryId != null) {
+            // The user's own correction for this merchant.
+            transaction.setCategoryId(mappedCategoryId);
+            transaction.setCategorizationSource(Transaction.SOURCE_MERCHANT_MAPPING);
             transaction.setCategorizationConfidence(BigDecimal.ONE);
             return;
         }
