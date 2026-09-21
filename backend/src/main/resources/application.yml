@@ -1,0 +1,161 @@
+spring:
+  application:
+    name: SpendOS
+    description: Intelligent Personal Financial Operating System
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+    open-in-view: false
+
+  # DataSource Configuration
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/spendos}
+    username: ${DATABASE_USERNAME:spendos_user}
+    password: ${DATABASE_PASSWORD:spendos_password}
+    hikari:
+      maximum-pool-size: ${DATABASE_HIKARI_MAXIMUM_POOL_SIZE:20}
+      minimum-idle: ${DATABASE_HIKARI_MINIMUM_IDLE:5}
+      connection-timeout: ${DATABASE_HIKARI_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DATABASE_HIKARI_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DATABASE_HIKARI_MAX_LIFETIME:1800000}
+      connection-test-query: SELECT 1
+      auto-commit: true
+
+  # Flyway Configuration
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    out-of-order: false
+    validate-on-migrate: true
+    baseline-on-migrate: false
+
+  # Jackson Configuration
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # Servlet Configuration
+  servlet:
+    multipart:
+      max-file-size: ${FILE_UPLOAD_MAX_SIZE:52428800}
+      max-request-size: ${FILE_UPLOAD_MAX_SIZE:52428800}
+
+  # Security
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER:http://localhost:8080}
+
+# Server Configuration
+server:
+  port: ${APP_PORT:8080}
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.spendos: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/spendos.log
+    max-size: ${LOG_FILE_MAX_SIZE:100MB}
+    max-history: ${LOG_FILE_MAX_FILES:10}
+
+# Actuator Configuration (Health, Metrics)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+  metrics:
+    export:
+      simple:
+        enabled: true
+  server:
+    port: ${APP_PORT:8080}
+
+# API Documentation (Swagger/OpenAPI)
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs
+  show-actuator: true
+
+# Application-specific Configuration
+app:
+  name: ${APP_NAME:SpendOS}
+  environment: ${APP_ENV:development}
+  url: ${APP_URL:http://localhost:3000}
+  version: ${project.version:0.1.0}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:CHANGE_ME_MINIMUM_32_CHARACTERS_LONG_RANDOM_STRING_IN_PRODUCTION}
+  expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:2592000000}
+  issuer: ${JWT_ISSUER:spendos}
+
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: '*'
+  expose-headers: X-Total-Count,X-Page-Count
+  max-age: 3600
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+
+# Feature Flags
+features:
+  ai-assistant-enabled: ${FEATURE_AI_ASSISTANT_ENABLED:true}
+  recurring-detection-enabled: ${FEATURE_RECURRING_DETECTION_ENABLED:true}
+  anomaly-detection-enabled: ${FEATURE_ANOMALY_DETECTION_ENABLED:true}
+  money-leak-detection-enabled: ${FEATURE_MONEY_LEAK_DETECTION_ENABLED:true}
+  spending-prediction-enabled: ${FEATURE_SPENDING_PREDICTION_ENABLED:true}
+  health-score-enabled: ${FEATURE_HEALTH_SCORE_ENABLED:true}

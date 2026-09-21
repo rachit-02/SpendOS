@@ -1,0 +1,136 @@
+# Backend (Java/Maven)
+backend/target/
+backend/.settings/
+backend/.classpath
+backend/.project
+backend/.springBeans
+backend/.sts4-cache/
+backend/bin/
+backend/*.jar
+backend/*.war
+backend/logs/
+
+# Maven
+.m2/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# Frontend (Node/React)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/coverage/
+frontend/.env.local
+frontend/.env.*.local
+
+# Vite
+frontend/.vite/
+
+# npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Playwright
+frontend/test-results/
+frontend/blob-report/
+frontend/playwright/.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+*.iws
+*.ipr
+.sublime-project
+.sublime-workspace
+.c9/
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+postgres_data/
+redis_data/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~
+
+# Build artifacts
+dist/
+build/
+target/
+*.jar
+*.war
+*.ear
+
+# Coverage reports
+coverage/
+.nyc_output/
+htmlcov/
+
+# Code quality
+jacoco.xml
+.scannerwork/
+
+# Git
+.git/
+
+# Package lock files (can be committed if working with exact versions)
+# Uncomment if you want to exclude them:
+# package-lock.json
+# pom.xml.lock
+
+# IDE Configuration (local)
+*.code-workspace
+.vscode/settings.json
+.vscode/launch.json
+.idea/runConfigurations/
+
+# Node
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+.coverage
+.nyc_output
+
+# Misc
+*.pem
+*.key
+*.crt
+*.cert

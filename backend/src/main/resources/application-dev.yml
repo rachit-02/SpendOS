@@ -1,0 +1,38 @@
+spring:
+  profiles:
+    active: development
+
+  # Development Database - Local PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spendos
+    username: spendos_user
+    password: spendos_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+logging:
+  level:
+    root: INFO
+    com.spendos: DEBUG
+    org.springframework: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Disable security for easier development
+app:
+  environment: development
+  debug-mode: true
+
+# Relaxed CORS for development
+cors:
+  allowed-origins: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173
+  allow-credentials: true
