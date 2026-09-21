@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/utils/cn'
 import type { Dashboard } from '@/types/dashboard'
@@ -10,13 +11,21 @@ function scoreTone(score: number): string {
 }
 
 /** Score ring plus the factor breakdown so users can see exactly why the score is what it is. */
-export function HealthScoreCard({ health, compact = false }: { health: Dashboard['financialHealth']; compact?: boolean }) {
+export function HealthScoreCard({ health, compact = false, detailsLink = false }: {
+  health: Dashboard['financialHealth']
+  compact?: boolean
+  /** Shows a link to the full health page (used on the dashboard). */
+  detailsLink?: boolean
+}) {
   const score = health.score
   const circumference = 2 * Math.PI * 42
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Financial health</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle>Financial health</CardTitle>
+          {detailsLink && <Link to="/health" className="text-sm text-primary hover:underline">Details and tips</Link>}
+        </div>
         <CardDescription>{health.summary}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

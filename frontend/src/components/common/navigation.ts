@@ -1,6 +1,7 @@
 import {
   BarChart3,
   FileText,
+  HeartPulse,
   Flag,
   LineChart,
   MessageCircle,
@@ -27,6 +28,7 @@ export const navItems: NavItem[] = [
   { to: '/transactions', label: 'Transactions', icon: Receipt },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/insights', label: 'Insights', icon: Lightbulb },
+  { to: '/health', label: 'Health', icon: HeartPulse },
   { to: '/budgets', label: 'Budgets', icon: PiggyBank },
   { to: '/planning', label: 'Planning', icon: LineChart },
   { to: '/goals', label: 'Goals', icon: Flag },

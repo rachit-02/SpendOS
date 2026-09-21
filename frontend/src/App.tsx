@@ -23,6 +23,7 @@ const PlanningPage = lazy(() => import('@/pages/PlanningPage'))
 const GoalsPage = lazy(() => import('@/pages/GoalsPage'))
 const AssistantPage = lazy(() => import('@/pages/AssistantPage'))
 const MerchantsPage = lazy(() => import('@/pages/MerchantsPage'))
+const HealthPage = lazy(() => import('@/pages/HealthPage'))
 const StatusPage = lazy(() => import('@/pages/StatusPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -47,6 +48,7 @@ export function AppRoutes() {
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/merchants" element={<MerchantsPage />} />
+          <Route path="/health" element={<HealthPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/settings" element={<SettingsPage />} />

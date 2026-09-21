@@ -84,7 +84,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <HealthScoreCard health={data.financialHealth} />
+            <HealthScoreCard health={data.financialHealth} detailsLink />
 
             <Card className="lg:col-span-2">
               <CardHeader>
