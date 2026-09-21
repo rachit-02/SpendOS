@@ -7,6 +7,12 @@ import com.spendos.reports.dto.AutopsyDtos.MonthlyAutopsy;
 import com.spendos.reports.dto.AutopsyDtos.ReportSummary;
 import com.spendos.reports.service.AutopsyPdfRenderer;
 import com.spendos.reports.service.AutopsyService;
+import com.spendos.reports.dto.PredictionDtos.Affordability;
+import com.spendos.reports.dto.PredictionDtos.AffordabilityRequest;
+import com.spendos.reports.dto.PredictionDtos.SpendingPrediction;
+import com.spendos.reports.service.PredictionService;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.YearMonth;
 import java.util.List;
@@ -33,9 +39,11 @@ public class ReportController {
     private final AutopsyPdfRenderer pdfRenderer;
     private final PeriodResolver periods;
     private final AuditService auditService;
+    private final PredictionService predictionService;
 
     public ReportController(AutopsyService autopsyService, AutopsyPdfRenderer pdfRenderer, PeriodResolver periods,
-                            AuditService auditService) {
+                            AuditService auditService, PredictionService predictionService) {
+        this.predictionService = predictionService;
         this.autopsyService = autopsyService;
         this.pdfRenderer = pdfRenderer;
         this.periods = periods;
@@ -57,6 +65,20 @@ public class ReportController {
             @RequestParam(required = false) Integer year) {
         return ResponseEntity.ok(ApiResponse.success(
                 autopsyService.generate(userId, periods.resolve(userId, month, year))));
+    }
+
+    @GetMapping("/spending-prediction")
+    public ResponseEntity<ApiResponse<SpendingPrediction>> prediction(
+            @AuthenticationPrincipal UUID userId,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(ApiResponse.success(predictionService.predict(userId, month, year)));
+    }
+
+    @PostMapping("/affordability")
+    public ResponseEntity<ApiResponse<Affordability>> affordability(
+            @AuthenticationPrincipal UUID userId, @Valid @RequestBody AffordabilityRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(predictionService.affordability(userId, request)));
     }
 
     @GetMapping("/autopsies")
