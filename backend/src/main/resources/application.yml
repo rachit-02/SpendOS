@@ -110,6 +110,10 @@ management:
       show-details: never
       probes:
         enabled: true
+      # Not ready to take traffic while the database is unreachable.
+      group:
+        readiness:
+          include: readinessState,db
 
 # API Documentation (Swagger/OpenAPI)
 springdoc:
@@ -129,6 +133,9 @@ app:
   environment: ${APP_ENV:development}
   url: ${APP_URL:http://localhost:3000}
   version: 0.1.0
+  # SECURITY.md rate limits. Only turn off for load testing a private environment.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
 
 # JWT Configuration
 jwt:

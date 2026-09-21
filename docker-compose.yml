@@ -54,6 +54,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-CHANGE_ME_MINIMUM_32_CHARACTERS_LONG_RANDOM_STRING_IN_PRODUCTION}
       APP_ENV: ${APP_ENV:-development}
       APP_URL: ${APP_URL:-http://localhost:3000}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
       SPRING_PROFILES_ACTIVE: docker
       JAVA_TOOL_OPTIONS: -Xmx512m -Xms256m
@@ -66,7 +67,7 @@ services:
     volumes:
       - backend_logs:/app/logs
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -86,7 +87,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
