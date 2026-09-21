@@ -1,7 +1,14 @@
 spring:
   application:
     name: SpendOS
-    description: Intelligent Personal Financial Operating System
+
+  # Redis is optional for the MVP; the in-memory cache is used unless REDIS_ENABLED=true
+  cache:
+    type: ${CACHE_TYPE:simple}
+  data:
+    redis:
+      repositories:
+        enabled: false
 
   # JPA/Hibernate Configuration
   jpa:
@@ -9,12 +16,10 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        use_sql_comments: true
         jdbc:
-          batch_size: 20
+          batch_size: 50
           fetch_size: 50
+          time_zone: UTC
         order_inserts: true
         order_updates: true
     show-sql: false
@@ -31,8 +36,6 @@ spring:
       connection-timeout: ${DATABASE_HIKARI_CONNECTION_TIMEOUT:30000}
       idle-timeout: ${DATABASE_HIKARI_IDLE_TIMEOUT:600000}
       max-lifetime: ${DATABASE_HIKARI_MAX_LIFETIME:1800000}
-      connection-test-query: SELECT 1
-      auto-commit: true
 
   # Flyway Configuration
   flyway:
@@ -57,83 +60,71 @@ spring:
       max-file-size: ${FILE_UPLOAD_MAX_SIZE:52428800}
       max-request-size: ${FILE_UPLOAD_MAX_SIZE:52428800}
 
-  # Security
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER:http://localhost:8080}
-
 # Server Configuration
 server:
   port: ${APP_PORT:8080}
   servlet:
     context-path: /api
+  error:
+    include-message: never
+    include-stacktrace: never
   compression:
     enabled: true
     min-response-size: 1024
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
 
-# Logging Configuration
+# Logging Configuration (never log request bodies, bind parameters or secrets)
 logging:
   level:
     root: INFO
-    com.spendos: DEBUG
+    com.spendos: INFO
     org.springframework.web: INFO
     org.springframework.security: INFO
-    org.hibernate: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%X{requestId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{requestId:-}] %logger{36} - %msg%n"
   file:
     name: logs/spendos.log
-    max-size: ${LOG_FILE_MAX_SIZE:100MB}
-    max-history: ${LOG_FILE_MAX_FILES:10}
+  logback:
+    rollingpolicy:
+      max-file-size: ${LOG_FILE_MAX_SIZE:100MB}
+      max-history: ${LOG_FILE_MAX_FILES:10}
 
 # Actuator Configuration (Health, Metrics)
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info
       base-path: /actuator
+  health:
+    redis:
+      enabled: ${REDIS_ENABLED:false}
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: never
       probes:
         enabled: true
-  health:
-    livenessState:
-      enabled: true
-    readinessState:
-      enabled: true
-  metrics:
-    export:
-      simple:
-        enabled: true
-  server:
-    port: ${APP_PORT:8080}
 
 # API Documentation (Swagger/OpenAPI)
 springdoc:
   swagger-ui:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
     display-request-duration: true
   api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
     path: /v3/api-docs
-  show-actuator: true
 
 # Application-specific Configuration
 app:
   name: ${APP_NAME:SpendOS}
   environment: ${APP_ENV:development}
   url: ${APP_URL:http://localhost:3000}
-  version: ${project.version:0.1.0}
+  version: 0.1.0
 
 # JWT Configuration
 jwt:
@@ -145,11 +136,6 @@ jwt:
 # CORS Configuration
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
-  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
-  allowed-headers: '*'
-  expose-headers: X-Total-Count,X-Page-Count
-  max-age: 3600
-  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
 
 # Feature Flags
 features:

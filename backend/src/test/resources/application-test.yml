@@ -1,0 +1,12 @@
+logging:
+  file:
+    name: target/test-logs/spendos.log
+  level:
+    root: WARN
+    com.spendos: INFO
+
+jwt:
+  secret: test-secret-that-is-definitely-longer-than-32-bytes
+
+cors:
+  allowed-origins: http://localhost:3000
