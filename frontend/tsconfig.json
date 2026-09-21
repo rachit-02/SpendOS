@@ -23,17 +23,12 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@services/*": ["src/services/*"],
-      "@stores/*": ["src/stores/*"],
-      "@types/*": ["src/types/*"],
-      "@utils/*": ["src/utils/*"],
-      "@pages/*": ["src/pages/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src"],

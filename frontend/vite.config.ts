@@ -1,32 +1,37 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'node:path'
+
+// The dev proxy target is configurable because port 8080 may be taken on developer machines.
+const apiTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8080'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  
+
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+
   server: {
     port: 3000,
     strictPort: false,
-    open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: apiTarget,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
     },
   },
 
+  esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : undefined,
+
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-      },
-    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -43,7 +48,16 @@ export default defineConfig({
     strictPort: false,
   },
 
-  define: {
-    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    include: ['src/**/*.test.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/test/**', 'src/**/*.test.{ts,tsx}', 'src/main.tsx', 'src/vite-env.d.ts'],
+    },
   },
-})
+}))
