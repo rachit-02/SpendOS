@@ -31,6 +31,17 @@ public class ImportJob extends CreatedEntity {
     @Column(name = "file_size_bytes")
     private Long fileSizeBytes;
 
+    @Column(name = "account_id")
+    private UUID accountId;
+
+    /** SHA-256 of the file content, used to stop the same file being imported twice. */
+    @Column(name = "file_hash", length = 64)
+    private String fileHash;
+
+    /** Data rows detected in the file; denominator of the progress percentage. */
+    @Column(name = "total_rows")
+    private int totalRows;
+
     @Column(name = "import_status", nullable = false, length = 50)
     private String importStatus = PENDING;
 
@@ -46,7 +57,7 @@ public class ImportJob extends CreatedEntity {
     @Column(name = "invalid_count")
     private int invalidCount;
 
-    /** JSON summary; also carries the account, file hash and total row count used for progress. */
+    /** JSON summary: error counts by code plus the detected file format. */
     @Column(name = "error_summary")
     private String errorSummary;
 

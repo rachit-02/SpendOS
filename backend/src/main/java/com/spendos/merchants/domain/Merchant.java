@@ -34,6 +34,9 @@ public class Merchant extends BaseEntity {
     @Column(name = "category_id")
     private UUID categoryId;
 
+    @Column(name = "subcategory_id")
+    private UUID subcategoryId;
+
     @Column(name = "confidence_score", precision = 3, scale = 2)
     private BigDecimal confidenceScore;
 
