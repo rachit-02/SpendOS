@@ -1,0 +1,6 @@
+# Normalize line endings; shell scripts and Dockerfiles must stay LF for Linux containers
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.jar binary
