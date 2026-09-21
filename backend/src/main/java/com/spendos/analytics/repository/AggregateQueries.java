@@ -48,6 +48,9 @@ public class AggregateQueries {
     public record DayAmount(LocalDate date, BigDecimal amount) {
     }
 
+    public record MonthAmount(YearMonth month, BigDecimal amount, long count) {
+    }
+
     private final JdbcTemplate jdbc;
 
     public AggregateQueries(JdbcTemplate jdbc) {
@@ -154,6 +157,27 @@ public class AggregateQueries {
                 },
                 userId, categoryId, Date.valueOf(from.atDay(1)), Date.valueOf(to.atEndOfMonth()));
         return byMonth;
+    }
+
+    /** One category's monthly spend and transaction count, zero-filled. */
+    public List<MonthAmount> monthlyCategorySeries(UUID userId, UUID categoryId, YearMonth from, YearMonth to) {
+        Map<YearMonth, MonthAmount> byMonth = new TreeMap<>();
+        for (YearMonth month = from; !month.isAfter(to); month = month.plusMonths(1)) {
+            byMonth.put(month, new MonthAmount(month, BigDecimal.ZERO, 0));
+        }
+        jdbc.query("""
+                SELECT EXTRACT(YEAR FROM transaction_date)::int, EXTRACT(MONTH FROM transaction_date)::int,
+                       SUM(amount), COUNT(*)
+                FROM transactions
+                WHERE user_id = ? AND category_id = ? AND transaction_type = 'debit'
+                  AND transaction_date BETWEEN ? AND ? AND deleted_at IS NULL
+                GROUP BY 1, 2""",
+                rs -> {
+                    YearMonth month = YearMonth.of(rs.getInt(1), rs.getInt(2));
+                    byMonth.put(month, new MonthAmount(month, rs.getBigDecimal(3), rs.getLong(4)));
+                },
+                userId, categoryId, Date.valueOf(from.atDay(1)), Date.valueOf(to.atEndOfMonth()));
+        return new ArrayList<>(byMonth.values());
     }
 
     public List<MethodAmount> spendingByPaymentMethod(UUID userId, LocalDate start, LocalDate end) {
