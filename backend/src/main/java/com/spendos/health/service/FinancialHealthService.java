@@ -29,8 +29,17 @@ public class FinancialHealthService {
         this.budgetAdherence = budgetAdherence;
     }
 
+    /** The score together with the inputs it was computed from (used for explanations and advice). */
+    public record Snapshot(YearMonth month, Result result, Inputs inputs) {
+    }
+
     @Transactional(readOnly = true)
     public Result calculate(UUID userId, YearMonth asOf) {
+        return snapshot(userId, asOf).result();
+    }
+
+    @Transactional(readOnly = true)
+    public Snapshot snapshot(UUID userId, YearMonth asOf) {
         YearMonth windowStart = asOf.minusMonths(WINDOW_MONTHS - 1L);
         List<MonthTotals> window = activeMonths(aggregates.monthlyTotals(userId, windowStart, asOf));
         List<MonthTotals> history = activeMonths(
@@ -53,7 +62,7 @@ public class FinancialHealthService {
                 adherence.ratio(), adherence.tracked(),
                 average(recurring, months),
                 aggregates.estimatedBalance(userId));
-        return HealthScoreCalculator.calculate(inputs);
+        return new Snapshot(asOf, HealthScoreCalculator.calculate(inputs), inputs);
     }
 
     /** Drops leading months before the user's data begins so new users are not penalized for them. */
