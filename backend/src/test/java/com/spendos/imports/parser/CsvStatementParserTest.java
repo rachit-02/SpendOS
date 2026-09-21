@@ -69,7 +69,7 @@ class CsvStatementParserTest {
         byte[] latin = "Date,Description,Amount\n05-09-2026,Café Coffee Day,120\n".getBytes(Charset.forName("windows-1252"));
         assertThat(CsvStatementParser.parse(latin).rows().get(0).cell(1)).isEqualTo("Café Coffee Day");
 
-        ParsedFile bom = parse("﻿Date,Description,Amount\n05-09-2026,Tea,20\n");
+        ParsedFile bom = parse("\uFEFFDate,Description,Amount\n05-09-2026,Tea,20\n");
         assertThat(bom.mapping().date()).isZero();
     }
 

@@ -37,7 +37,7 @@ public final class AmountParser {
             marker = token.startsWith("d") ? "debit" : "credit";
             text = text.substring(0, drCr.start()).trim();
         }
-        text = CURRENCY.matcher(text).replaceAll("").replace(" ", "").replace(" ", "").trim();
+        text = CURRENCY.matcher(text).replaceAll("").replace("\u00a0", "").replace(" ", "").trim();
         boolean negative = false;
         if (text.startsWith("(") && text.endsWith(")")) {
             negative = true;

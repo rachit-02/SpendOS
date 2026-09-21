@@ -115,7 +115,7 @@ public final class CsvStatementParser {
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
                     .decode(ByteBuffer.wrap(bytes)).toString();
-            return text.startsWith("﻿") ? text.substring(1) : text;
+            return text.startsWith("\uFEFF") ? text.substring(1) : text;
         } catch (CharacterCodingException exception) {
             return new String(bytes, Charset.forName("windows-1252"));
         }
