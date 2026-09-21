@@ -134,3 +134,6 @@ node_modules
 *.key
 *.crt
 *.cert
+
+# Playwright HTML reports
+frontend/playwright-report/

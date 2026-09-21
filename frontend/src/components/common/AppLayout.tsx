@@ -91,7 +91,8 @@ export function AppLayout() {
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <span className="hidden text-sm text-muted-foreground sm:inline">{user?.fullName ?? user?.email}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
+          {/* The text label is hidden on small screens, so the button carries its own name. */}
+          <Button variant="ghost" size="sm" onClick={handleLogout} aria-label="Sign out">
             <LogOut className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Sign out</span>
           </Button>
