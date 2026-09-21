@@ -14,6 +14,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const ImportPage = lazy(() => import('@/pages/ImportPage'))
 const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'))
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const StatusPage = lazy(() => import('@/pages/StatusPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -30,6 +31,7 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/transactions/:transactionId" element={<TransactionsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

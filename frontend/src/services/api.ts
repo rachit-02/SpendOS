@@ -137,3 +137,20 @@ export function cleanParams<T extends object>(params: T): Partial<T> {
 export function errorMessage(error: unknown): string {
   return toApiError(error).message
 }
+
+/** Downloads a file response (CSV/PDF) and saves it with the given name. */
+export async function downloadFile(url: string, params: Record<string, unknown>, fileName: string): Promise<void> {
+  try {
+    const response = await api.get(url, { params: cleanParams(params), responseType: 'blob' })
+    const objectUrl = URL.createObjectURL(response.data as Blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+  } catch (error) {
+    throw toApiError(error)
+  }
+}

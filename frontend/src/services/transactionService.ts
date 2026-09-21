@@ -1,4 +1,4 @@
-import { api, cleanParams, toApiError, unwrap, unwrapPage } from './api'
+import { api, cleanParams, downloadFile, toApiError, unwrap, unwrapPage } from './api'
 import type { PaymentMethod, Transaction, TransactionType } from '@/types/transaction'
 
 export interface TransactionQuery {
@@ -56,24 +56,9 @@ export const transactionService = {
   suggestions: (q: string) => unwrap<Suggestions>(api.get('/transactions/suggestions', { params: cleanParams({ q }) })),
 
   /** Downloads a CSV of the given selection, or of everything matching the filters. */
-  async exportCsv(query: TransactionQuery, ids?: string[]): Promise<void> {
-    try {
-      const { page, pageSize, sortBy, sortOrder, ...filters } = query
-      const response = await api.get('/transactions/export', {
-        params: cleanParams({ ...filters, ids: ids?.join(',') }),
-        responseType: 'blob',
-        headers: { Accept: 'text/csv' },
-      })
-      const url = URL.createObjectURL(response.data as Blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `spendos-transactions-${new Date().toISOString().slice(0, 10)}.csv`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      throw toApiError(error)
-    }
+  exportCsv(query: TransactionQuery, ids?: string[]): Promise<void> {
+    const { page, pageSize, sortBy, sortOrder, ...filters } = query
+    return downloadFile('/transactions/export', { ...filters, ids: ids?.join(',') },
+      `spendos-transactions-${new Date().toISOString().slice(0, 10)}.csv`)
   },
 }
