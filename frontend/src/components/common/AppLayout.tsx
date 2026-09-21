@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, Menu, Moon, Sun, X } from 'lucide-react'
+import { AlertsBell } from './AlertsBell'
 import { Logo } from './Logo'
 import { navItems } from './navigation'
 import { Button } from '@/components/ui/button'
@@ -79,6 +80,7 @@ export function AppLayout() {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex-1" />
+          <AlertsBell />
           <Button
             variant="ghost"
             size="icon"

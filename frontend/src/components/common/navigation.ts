@@ -1,6 +1,8 @@
 import {
   BarChart3,
   LayoutDashboard,
+  PiggyBank,
+  Repeat,
   Receipt,
   Upload,
   Settings,
@@ -18,6 +20,8 @@ export const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', label: 'Transactions', icon: Receipt },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/budgets', label: 'Budgets', icon: PiggyBank },
+  { to: '/recurring', label: 'Recurring', icon: Repeat },
   { to: '/import', label: 'Import', icon: Upload },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]

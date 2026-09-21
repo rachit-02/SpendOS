@@ -11,6 +11,7 @@ import { HealthScoreCard } from '@/components/dashboard/HealthScoreCard'
 import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown'
 import { TopMerchants } from '@/components/dashboard/TopMerchants'
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
+import { BudgetsPreview, RecurringPreview } from '@/components/dashboard/DashboardSections'
 import { dashboardService } from '@/services/dashboardService'
 import { errorMessage } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
@@ -105,6 +106,9 @@ export default function DashboardPage() {
                   onSelect={(merchantId) => openTransactions({ merchantId })} />
               </CardContent>
             </Card>
+
+            {data.budgets.length > 0 && <BudgetsPreview budgets={data.budgets} currency={currency} />}
+            {data.recurringPayments.length > 0 && <RecurringPreview payments={data.recurringPayments} currency={currency} />}
 
             <Card className="lg:col-span-3">
               <CardHeader className="flex-row items-center justify-between">
