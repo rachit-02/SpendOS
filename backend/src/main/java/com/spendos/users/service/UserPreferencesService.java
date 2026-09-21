@@ -1,5 +1,7 @@
 package com.spendos.users.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spendos.audit.service.AuditService;
 import com.spendos.common.exception.ApiException;
 import com.spendos.users.dto.UserDtos.PreferencesResponse;
 import com.spendos.users.dto.UserDtos.UpdatePreferencesRequest;
@@ -8,6 +10,7 @@ import com.spendos.users.repository.UserPreferencesRepository;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Currency;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserPreferencesService {
 
     private final UserPreferencesRepository repository;
+    private final AuditService auditService;
+    private final ObjectMapper objectMapper;
 
-    public UserPreferencesService(UserPreferencesRepository repository) {
+    public UserPreferencesService(UserPreferencesRepository repository, AuditService auditService, ObjectMapper objectMapper) {
         this.repository = repository;
+        this.auditService = auditService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -40,6 +47,7 @@ public class UserPreferencesService {
     @Transactional
     public PreferencesResponse update(UUID userId, UpdatePreferencesRequest request) {
         UserPreferences preferences = getOrCreate(userId);
+        Map<String, Object> before = snapshot(PreferencesResponse.from(preferences));
         if (request.currencyCode() != null) {
             try {
                 Currency.getInstance(request.currencyCode());
@@ -74,7 +82,14 @@ public class UserPreferencesService {
         if (request.emailAlertsEnabled() != null) {
             preferences.setEmailAlertsEnabled(request.emailAlertsEnabled());
         }
-        return PreferencesResponse.from(repository.save(preferences));
+        PreferencesResponse saved = PreferencesResponse.from(repository.save(preferences));
+        auditService.record(userId, "user_preferences", userId, AuditService.UPDATE, before, snapshot(saved));
+        return saved;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> snapshot(PreferencesResponse preferences) {
+        return objectMapper.convertValue(preferences, Map.class);
     }
 
     @Transactional(readOnly = true)

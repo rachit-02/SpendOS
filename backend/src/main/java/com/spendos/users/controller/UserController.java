@@ -8,8 +8,13 @@ import com.spendos.users.dto.UserDtos.MessageResponse;
 import com.spendos.users.dto.UserDtos.PreferencesResponse;
 import com.spendos.users.dto.UserDtos.UpdatePreferencesRequest;
 import com.spendos.users.dto.UserDtos.UpdateProfileRequest;
+import com.spendos.users.service.DataExportService;
 import com.spendos.users.service.UserPreferencesService;
 import com.spendos.users.service.UserService;
+import java.time.LocalDate;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -31,10 +36,13 @@ public class UserController {
 
     private final UserService userService;
     private final UserPreferencesService preferencesService;
+    private final DataExportService exportService;
 
-    public UserController(UserService userService, UserPreferencesService preferencesService) {
+    public UserController(UserService userService, UserPreferencesService preferencesService,
+                          DataExportService exportService) {
         this.userService = userService;
         this.preferencesService = preferencesService;
+        this.exportService = exportService;
     }
 
     @GetMapping
@@ -72,5 +80,16 @@ public class UserController {
     public ResponseEntity<ApiResponse<PreferencesResponse>> updatePreferences(
             @AuthenticationPrincipal UUID userId, @Valid @RequestBody UpdatePreferencesRequest request) {
         return ResponseEntity.ok(ApiResponse.success(preferencesService.update(userId, request)));
+    }
+
+    /** Everything stored about the user as a ZIP of CSV and JSON files (API_DESIGN.md "Export User Data"). */
+    @GetMapping(value = "/export", produces = "application/zip")
+    public ResponseEntity<byte[]> export(@AuthenticationPrincipal UUID userId) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("spendos-export-" + LocalDate.now() + ".zip").build().toString())
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(exportService.export(userId));
     }
 }

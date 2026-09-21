@@ -69,15 +69,8 @@ public class TransactionExportService {
         return out.toString();
     }
 
-    /** Neutralizes spreadsheet formula injection (cells starting with = + - @ are executed by Excel). */
     static String safe(String value) {
-        if (value == null) {
-            return "";
-        }
-        if (!value.isEmpty() && "=+-@\t\r".indexOf(value.charAt(0)) >= 0) {
-            return "'" + value;
-        }
-        return value;
+        return com.spendos.common.util.CsvCells.safe(value);
     }
 
     private static String nz(String value) {

@@ -161,3 +161,7 @@ assistant:
     base-url: ${ASSISTANT_LLM_BASE_URL:https://api.anthropic.com}
     timeout: ${ASSISTANT_LLM_TIMEOUT:8s}
     max-tokens: 400
+
+# Accounts deleted more than 30 days ago are purged daily (SECURITY.md "Account Deletion").
+users:
+  purge-schedule: ${USERS_PURGE_SCHEDULE:0 30 3 * * *}

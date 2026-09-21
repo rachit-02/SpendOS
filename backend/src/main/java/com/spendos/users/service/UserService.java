@@ -1,5 +1,6 @@
 package com.spendos.users.service;
 
+import com.spendos.audit.service.AuditService;
 import com.spendos.auth.dto.UserResponse;
 import com.spendos.auth.domain.User;
 import com.spendos.auth.repository.UserRepository;
@@ -10,7 +11,9 @@ import com.spendos.users.dto.UserDtos.ChangePasswordRequest;
 import com.spendos.users.dto.UserDtos.UpdateProfileRequest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +29,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
+    private final AuditService auditService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordPolicy passwordPolicy) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordPolicy passwordPolicy,
+                       AuditService auditService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
+        this.auditService = auditService;
     }
 
     @Transactional(readOnly = true)
@@ -41,6 +47,7 @@ public class UserService {
     @Transactional
     public UserResponse updateProfile(UUID userId, UpdateProfileRequest request) {
         User user = activeUser(userId);
+        Map<String, Object> before = profile(user);
         if (request.fullName() != null) {
             String fullName = request.fullName().trim();
             if (fullName.isEmpty()) {
@@ -58,6 +65,8 @@ public class UserService {
             }
         }
         User saved = userRepository.saveAndFlush(user);
+        // Right to rectification (SECURITY.md): profile changes are audited with their old values.
+        auditService.record(userId, "user", userId, AuditService.UPDATE, before, profile(saved));
         log.info("Profile updated | userId={} | action=update | entity=user", userId);
         return UserResponse.from(saved);
     }
@@ -75,6 +84,7 @@ public class UserService {
         }
         user.changePassword(passwordEncoder.encode(request.newPassword()), Instant.now().truncatedTo(ChronoUnit.SECONDS));
         userRepository.save(user);
+        auditService.record(userId, "user", userId, AuditService.UPDATE, null, Map.of("passwordChanged", true));
         log.info("Password changed | userId={} | action=change_password", userId);
     }
 
@@ -87,7 +97,15 @@ public class UserService {
         }
         user.softDelete(Times.nowUtc(), Instant.now().truncatedTo(ChronoUnit.SECONDS));
         userRepository.save(user);
+        auditService.record(userId, "user", userId, AuditService.DELETE, null, Map.of("purgeAfterDays", 30));
         log.info("Account soft-deleted | userId={} | action=delete | entity=user", userId);
+    }
+
+    private static Map<String, Object> profile(User user) {
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("fullName", user.getFullName());
+        values.put("email", user.getEmail());
+        return values;
     }
 
     private User activeUser(UUID userId) {
