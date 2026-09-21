@@ -108,6 +108,9 @@ Backend API: http://localhost:8080/api/v1/health
 API docs:    http://localhost:8080/api/swagger-ui.html (development only)
 ```
 
+To try it with your own flow, import [`samples/sample-bank-statement.csv`](./samples/sample-bank-statement.csv)
+(two months of synthetic transactions in a typical Indian bank export format) on the Import page.
+
 If port 8080 is taken (Jenkins often uses it), start with `BACKEND_PORT=8081 docker compose up -d --build`;
 the frontend reaches the API through its own `/api` proxy, so nothing else changes.
 

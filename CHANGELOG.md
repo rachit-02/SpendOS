@@ -76,9 +76,36 @@ First feature-complete MVP, built phase by phase from DEVELOPMENT_PLAN.md.
 - `RATE_LIMIT_ENABLED` in `.env` had no effect; it is now wired to `app.rate-limit.enabled`.
 - The readiness probe now includes the database, so instances without a database connection stop receiving traffic.
 
+### Performance
+
+Load test `load/k6-core-api.js`, 2026-09-22.
+- **Load:** 100 virtual users for 105 s (30 s ramp-up, 60 s at 100 users, 15 s ramp-down), each loading dashboard, transactions, insights and budgets once per iteration.
+- **Stack:** single backend container (`-Xmx512m`) behind the nginx frontend, PostgreSQL 16, Docker Desktop 29.1.3 (12 CPUs, 7.6 GB for Docker) on an Intel Core 5 210H laptop with 15.6 GB RAM.
+- **Rate limiting** was disabled for the run.
+
+| Metric | 10 shared accounts | 100 accounts, all | 100 accounts, cold | 100 accounts, warm |
+|---|---|---|---|---|
+| API median | 13.1 ms | 8.3 ms | 17.3 ms | 8.2 ms |
+| API p95 | 226 ms | 20.9 ms | 145.8 ms | 18.0 ms |
+| API p99 | – | 91.4 ms | 324.5 ms | 44.6 ms |
+| API max | 3.93 s | 519 ms | 519 ms | 364 ms |
+| Dashboard median | 9.7 ms | 6.6 ms | 72.1 ms | – |
+| Dashboard p95 | 187 ms | 45.5 ms | 242.5 ms | – |
+| Failed requests | 0 / 7,822 | 0 / 8,452 | | |
+
+- **Cold vs warm:** "cold" is each user's first pass, when nothing is cached. Per-user results are cached for 5 minutes, so every later request is "warm". Cold is the figure to plan capacity with.
+- **Comparing the two runs:** the 100-account run created 100 demo accounts before measuring, which also warmed the JVM and database; the 10-account run did not. The 10-account run's 3.9 s worst cases most likely came from that cold start, plus up to 10 users missing the same account's cache at the same moment.
+- **Targets met** (DEVELOPMENT_PLAN.md): API median < 200 ms, dashboard < 2 s, error rate < 1%.
+
 ### Known limitations
 
 - Rate limits are held in memory per backend instance.
 - `vite` 5 and `vitest` 1 (dev server and test runner only, not shipped) have published advisories. Upgrading to vite 8 / vitest 5 is blocked by a peer-dependency conflict and is planned.
 - Colour contrast is not covered by the automated accessibility tests (jsdom cannot compute it) and still needs a browser-based check.
+- Settings shows "Monthly email reports" and email alert toggles, but no email is sent yet: the preferences
+  are stored and nothing reads them.
+- Merchant names derived from free-text bank narrations keep period-specific words, e.g. a salary credit
+  becomes "Cr Acme Technologies Salary Aug" and a separate "... Salary Sep". Categorization is still correct;
+  the Merchants page can merge them.
+- Insights and anomaly detection need a few months of history; with only weeks of data expect few, noisy insights.
 - Currency amounts in backend-generated sentences use Western digit grouping (₹360,000), while the UI uses Indian grouping (₹3,60,000).
