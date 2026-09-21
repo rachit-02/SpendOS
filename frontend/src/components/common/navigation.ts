@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Receipt,
   Upload,
   Settings,
   type LucideIcon,
@@ -14,6 +15,7 @@ export interface NavItem {
 /** Primary navigation. Items are added here as each feature area ships. */
 export const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/transactions', label: 'Transactions', icon: Receipt },
   { to: '/import', label: 'Import', icon: Upload },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
