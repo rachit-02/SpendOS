@@ -37,7 +37,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             new Rule("register", "POST", "/v1/auth/register", false, 5, Duration.ofHours(1), true),
             new Rule("upload", "POST", "/v1/imports/upload", false, 10, Duration.ofHours(1), false),
             new Rule("tx-read", "GET", "/v1/transactions", true, 100, Duration.ofMinutes(1), false),
-            new Rule("tx-write", "POST", "/v1/transactions", true, 50, Duration.ofMinutes(1), false));
+            new Rule("tx-write", "POST", "/v1/transactions", true, 50, Duration.ofMinutes(1), false),
+            // May call a paid language model; keeps cost and abuse bounded (RISKS_AND_ASSUMPTIONS.md #8).
+            new Rule("assistant", "POST", "/v1/assistant/query", false, 30, Duration.ofMinutes(1), false));
 
     static final Rule GENERAL = new Rule("general", null, "/v1/", true, 1000, Duration.ofHours(1), false);
 

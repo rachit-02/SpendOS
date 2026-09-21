@@ -149,3 +149,15 @@ features:
   money-leak-detection-enabled: ${FEATURE_MONEY_LEAK_DETECTION_ENABLED:true}
   spending-prediction-enabled: ${FEATURE_SPENDING_PREDICTION_ENABLED:true}
   health-score-enabled: ${FEATURE_HEALTH_SCORE_ENABLED:true}
+
+# Financial assistant. Answers are always computed by the backend; the optional language model only
+# rewords them (and is rejected if it adds any number). Off by default: enabling it sends the question
+# and aggregated findings to Anthropic.
+assistant:
+  llm:
+    enabled: ${ASSISTANT_LLM_ENABLED:false}
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ASSISTANT_LLM_MODEL:claude-haiku-4-5-20251001}
+    base-url: ${ASSISTANT_LLM_BASE_URL:https://api.anthropic.com}
+    timeout: ${ASSISTANT_LLM_TIMEOUT:8s}
+    max-tokens: 400
