@@ -11,6 +11,8 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "insights")
@@ -65,4 +67,12 @@ public class Insight extends CreatedEntity {
 
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
+
+    /** JSON evidence: supporting transaction IDs, baselines, normal range. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "details", columnDefinition = "jsonb")
+    private String details;
+
+    @Column(name = "importance_score", precision = 6, scale = 2)
+    private BigDecimal importanceScore = BigDecimal.ZERO;
 }

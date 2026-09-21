@@ -65,6 +65,10 @@ server:
   port: ${APP_PORT:8080}
   servlet:
     context-path: /api
+    # Always declare UTF-8 so currency symbols (e.g. the rupee sign) survive every client.
+    encoding:
+      charset: UTF-8
+      force: true
   error:
     include-message: never
     include-stacktrace: never
