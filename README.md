@@ -34,7 +34,12 @@ SpendOS answers critical financial questions:
 - 🎯 **Goals** - Save toward financial goals with progress tracking
 - 📅 **Monthly Autopsy** - Comprehensive end-of-month financial report
 - 🔮 **Spending Prediction** - Forecast month-end spending based on patterns
-- ❓ **AI Assistant** - Ask questions about your finances in natural language
+- 🧮 **Planning & What-if** - "Can I afford this?", scenario simulator and comparisons
+- ❓ **AI Assistant** - Ask questions about your finances in natural language (answers are computed from your data; an optional LLM only rewords them)
+- 🏪 **Merchant Corrections** - Fix merchant names and categories once; they apply to past and future transactions
+- ❤️ **Financial Health Score** - Explainable 0-100 score with history and concrete advice
+- 📦 **Your Data, Your Control** - Export everything as a ZIP; deleted accounts are purged after 30 days
+- 🧪 **Demo Mode** - Try every feature on realistic synthetic data, no sign-up
 - 📱 **Mobile Responsive** - Works seamlessly on desktop and mobile
 
 ---
@@ -93,14 +98,18 @@ SpendOS/
 git clone https://github.com/yourname/spendos.git
 cd spendos
 
-# Start full stack
-docker-compose up
+# Start full stack (builds images, runs database migrations automatically)
+cp .env.example .env            # optional: review settings first
+docker compose up -d --build
 
 # Access application
-Frontend: http://localhost:3000
-Backend API: http://localhost:8080
-API Docs: http://localhost:8080/swagger-ui.html
+Frontend:    http://localhost:3000   (click "Try the demo" on the sign-in page)
+Backend API: http://localhost:8080/api/v1/health
+API docs:    http://localhost:8080/api/swagger-ui.html (development only)
 ```
+
+If port 8080 is taken (Jenkins often uses it), start with `BACKEND_PORT=8081 docker compose up -d --build`;
+the frontend reaches the API through its own `/api` proxy, so nothing else changes.
 
 ### Option 2: Local Development
 
@@ -123,12 +132,12 @@ npm run dev
 ### Option 3: Database Setup (if not using Docker)
 
 ```bash
-# Create database
+# Create database and user (see SETUP.md for details)
 createdb spendos
 
-# Run migrations
+# Migrations (backend/src/main/resources/db/migration) run automatically on startup via Flyway
 cd backend
-mvn flyway:migrate
+mvn spring-boot:run
 
 # Check health
 curl http://localhost:8080/api/v1/health
@@ -146,6 +155,8 @@ curl http://localhost:8080/api/v1/health
 - [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) - Implementation roadmap
 - [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
 - [SETUP.md](./SETUP.md) - Detailed setup instructions
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Production deployment, operations and troubleshooting
+- [CHANGELOG.md](./CHANGELOG.md) - Release notes
 
 ---
 
@@ -160,10 +171,12 @@ curl http://localhost:8080/api/v1/health
 - ✅ Authorization checks on all endpoints
 - ✅ SQL injection prevention
 - ✅ XSS protection
-- ✅ CSRF protection
+- ✅ CSRF not applicable by design (bearer tokens in headers, no auth cookies)
 - ✅ Rate limiting
-- ✅ Audit logging
-- ✅ Encrypted secrets management
+- ✅ Append-only audit logging
+- ✅ Security headers (CSP, frame, referrer and permissions policies, HSTS)
+- ✅ Secrets only from the environment; production refuses placeholder secrets
+- ✅ Data export and permanent deletion 30 days after account deletion
 
 ### What We DON'T Do
 
@@ -238,20 +251,27 @@ curl -X POST http://localhost:8080/api/v1/assistant/query \
 
 ### Running Tests
 
-**Backend:**
+**Backend** (needs Docker running: integration tests use Testcontainers PostgreSQL):
 ```bash
 cd backend
-mvn test                    # Unit tests
-mvn verify                  # All tests + integration
-mvn jacoco:report          # Coverage report
+mvn test                    # Unit + integration tests
+mvn verify                  # Tests + JaCoCo report + 80% line-coverage gate
+                            # report: target/site/jacoco/index.html
 ```
 
 **Frontend:**
 ```bash
 cd frontend
-npm test                    # Unit tests
-npm run test:e2e           # E2E tests
-npm run test:coverage      # Coverage report
+npm test                    # Component, page and accessibility (axe) tests
+npm run test:coverage       # Coverage with a 70% gate
+npm run type-check && npm run lint
+npm run test:e2e            # Playwright, against a running stack (docker compose up);
+                            # E2E_BASE_URL overrides http://localhost:3000
+```
+
+**Load test** (k6, against a private stack started with `RATE_LIMIT_ENABLED=false`):
+```bash
+docker run --rm -i -e BASE_URL=http://host.docker.internal:3000 grafana/k6 run - < load/k6-core-api.js
 ```
 
 ### Building for Production
@@ -274,15 +294,16 @@ docker build -t spendos-frontend .
 
 **Backend:**
 ```bash
-mvn spotbugs:check         # Bug detection
-mvn pmd:check              # Code analysis
-mvn checkstyle:check       # Style checking
+mvn spotbugs:check                                   # Bug detection
+mvn checkstyle:check                                 # Style checking
+mvn org.owasp:dependency-check-maven:check           # Known-vulnerability scan (set NVD_API_KEY)
 ```
 
 **Frontend:**
 ```bash
 npm run lint               # ESLint
 npm run format             # Prettier
+npm audit --omit=dev       # Production dependency advisories
 ```
 
 ---
@@ -318,19 +339,23 @@ npm run dev
 
 ### Port Already in Use
 
+Prefer moving SpendOS over killing other services: `BACKEND_PORT`, `FRONTEND_PORT` and `POSTGRES_PORT`
+change the host ports in `docker-compose.yml`.
+
 ```bash
-# Backend (8080)
-lsof -i :8080
-kill -9 <PID>
-
-# Frontend (3000)
-lsof -i :3000
-kill -9 <PID>
-
-# PostgreSQL (5432)
-lsof -i :5432
-kill -9 <PID>
+# Find what holds a port
+lsof -i :8080                       # macOS / Linux
+netstat -ano | findstr :8080        # Windows
 ```
+
+### Backend tests fail with "Could not find a valid Docker environment"
+
+Integration tests need a running Docker daemon. Testcontainers 1.21.4+ is required for Docker Engine 29.
+
+### "429 Too Many Requests"
+
+The API enforces the rate limits in SECURITY.md (e.g. 5 sign-in attempts per 15 minutes). Wait for the
+`Retry-After` period. See [DEPLOYMENT.md](./DEPLOYMENT.md) for more operational troubleshooting.
 
 ---
 
@@ -365,24 +390,24 @@ security(module): fix security issue
 - [x] API specification complete
 - [x] Security architecture defined
 - [x] Development plan created
-- [ ] Phase 1: Project setup
-- [ ] Phase 2: Authentication
-- [ ] Phase 3: Database & transactions
-- [ ] Phase 4: CSV import
-- [ ] Phase 5: Transaction management
-- [ ] Phase 6: Dashboard
-- [ ] Phase 7: Analytics
-- [ ] Phase 8: Budgets & recurring
-- [ ] Phase 9: Insights & anomalies
-- [ ] Phase 10: Monthly autopsy
-- [ ] Phase 11: Predictions & what-if
-- [ ] Phase 12: AI assistant
-- [ ] Phase 13: Merchant normalization
-- [ ] Phase 14: Health score
-- [ ] Phase 15: Security hardening
-- [ ] Phase 16: Testing & launch
+- [x] Phase 1: Project setup
+- [x] Phase 2: Authentication
+- [x] Phase 3: Database & transactions
+- [x] Phase 4: CSV import
+- [x] Phase 5: Transaction management
+- [x] Phase 6: Dashboard
+- [x] Phase 7: Analytics
+- [x] Phase 8: Budgets & recurring
+- [x] Phase 9: Insights & anomalies
+- [x] Phase 10: Monthly autopsy
+- [x] Phase 11: Predictions & what-if
+- [x] Phase 12: AI assistant
+- [x] Phase 13: Merchant normalization
+- [x] Phase 14: Health score
+- [x] Phase 15: Security hardening
+- [x] Phase 16: Testing & launch
 
-**Current Status:** Documentation Complete, Ready for Development ✅
+**Current Status:** MVP feature-complete (v1.0.0). See [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
