@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.5.15</version>
         <relativePath/>
     </parent>
 
@@ -32,10 +32,19 @@
         <lombok.version>1.18.34</lombok.version>
         <jjwt.version>0.12.6</jjwt.version>
         <commons-csv.version>1.11.0</commons-csv.version>
-        <springdoc.version>2.6.0</springdoc.version>
+        <springdoc.version>2.8.14</springdoc.version>
         <!-- 1.21+ negotiates the Docker API version; older releases fail against Docker Engine 29 -->
         <testcontainers.version>1.21.4</testcontainers.version>
         <openpdf.version>2.0.3</openpdf.version>
+
+        <!-- Security patch overrides of Boot-managed versions (OSV/OWASP scan, Phase 15).
+             Remove each once the Spring Boot parent ships the same or a newer version. -->
+        <tomcat.version>10.1.60</tomcat.version>
+        <postgresql.version>42.7.12</postgresql.version>
+        <jackson-bom.version>2.21.6</jackson-bom.version>
+        <netty.version>4.1.137.Final</netty.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <log4j2.version>2.25.5</log4j2.version>
     </properties>
 
     <dependencies>
@@ -207,6 +216,12 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Pulled in by Testcontainers (test scope only); 1.24 has known CVEs. -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.26.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -308,7 +323,7 @@
                 <version>10.0.4</version>
                 <configuration>
                     <failOnError>false</failOnError>
-                    <failBuildOnCVSS>9</failBuildOnCVSS>
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
                 </configuration>
             </plugin>
         </plugins>
