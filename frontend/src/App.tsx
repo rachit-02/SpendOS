@@ -12,6 +12,7 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const ImportPage = lazy(() => import('@/pages/ImportPage'))
 const StatusPage = lazy(() => import('@/pages/StatusPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -26,6 +27,7 @@ export function AppRoutes() {
         <Route path="/status" element={<StatusPage />} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/import" element={<ImportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
