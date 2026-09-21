@@ -60,4 +60,17 @@ describe('LoginForm', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password')
   })
+  it('starts a demo without signing up', async () => {
+    const demo = vi.spyOn(authService, 'startDemo').mockResolvedValue({
+      accessToken: 'a', refreshToken: 'r', expiresIn: 3600,
+      user: { userId: 'u-demo', email: 'demo-1@demo.spendos.invalid', fullName: 'Demo User', emailVerified: false,
+        createdAt: '2026-09-21T00:00:00Z', updatedAt: '2026-09-21T00:00:00Z' },
+    })
+    renderLogin()
+
+    await userEvent.click(screen.getByRole('button', { name: /Try the demo/ }))
+
+    expect(demo).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('Dashboard page')).toBeInTheDocument()
+  })
 })

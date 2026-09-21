@@ -17,6 +17,15 @@ export const authService = {
     return response
   },
 
+  /** Creates a demo account filled with synthetic data and signs into it. */
+  async startDemo(): Promise<LoginResponse> {
+    const response = await unwrap<LoginResponse>(api.post('/auth/demo'))
+    useAuthStore.getState().setSession(response)
+    return response
+  },
+
+  resetDemo: () => unwrap<{ message: string }>(api.post('/demo/reset')),
+
   /** Revokes tokens server-side; local state is cleared even if the server call fails. */
   async logout(): Promise<void> {
     const { refreshToken } = useAuthStore.getState()

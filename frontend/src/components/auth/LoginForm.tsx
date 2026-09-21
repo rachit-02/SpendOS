@@ -15,6 +15,19 @@ export function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  async function handleDemo() {
+    setSubmitting(true)
+    setFormError(null)
+    try {
+      await authService.startDemo()
+      navigate('/dashboard', { replace: true })
+    } catch (error) {
+      setFormError(errorMessage(error))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const errors: typeof fieldErrors = {}
@@ -72,6 +85,9 @@ export function LoginForm() {
       </div>
       <Button type="submit" className="w-full" disabled={submitting}>
         {submitting ? 'Signing in…' : 'Sign in'}
+      </Button>
+      <Button type="button" variant="outline" className="w-full" disabled={submitting} onClick={handleDemo}>
+        Try the demo (no sign-up)
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         New to SpendOS?{' '}

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, Menu, Moon, Sun, X } from 'lucide-react'
 import { AlertsBell } from './AlertsBell'
+import { DemoBanner } from './DemoBanner'
 import { Logo } from './Logo'
 import { navItems } from './navigation'
 import { Button } from '@/components/ui/button'
@@ -95,6 +96,7 @@ export function AppLayout() {
             <span className="hidden sm:inline">Sign out</span>
           </Button>
         </header>
+        <DemoBanner />
         <main id="main" className="mx-auto w-full max-w-7xl p-4 sm:p-6">
           <Outlet />
         </main>

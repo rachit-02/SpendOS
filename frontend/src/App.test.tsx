@@ -6,6 +6,7 @@ import { healthService } from './services/healthService'
 import { useAuthStore } from './store/authStore'
 import { dashboardService } from './services/dashboardService'
 import { budgetService } from './services/budgetService'
+import { userService } from './services/userService'
 
 describe('AppRoutes', () => {
   afterEach(() => {
@@ -49,6 +50,7 @@ describe('AppRoutes', () => {
   it('sends signed-in users away from the login page', async () => {
     vi.spyOn(dashboardService, 'get').mockRejectedValue(new Error('offline'))
     vi.spyOn(budgetService, 'alerts').mockResolvedValue([])
+    vi.spyOn(userService, 'preferences').mockRejectedValue(new Error('offline'))
     useAuthStore.getState().setSession({
       accessToken: 'token',
       refreshToken: 'refresh',
