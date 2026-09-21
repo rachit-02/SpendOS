@@ -17,3 +17,6 @@ app:
     enabled: false
   scheduling:
     enabled: false
+  # Background detection would race with test fixtures; tests call POST /recurring/detect.
+  recurring:
+    auto-detect: false
