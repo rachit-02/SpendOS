@@ -1,16 +1,36 @@
+import { lazy, Suspense } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { createQueryClient, routerFuture } from '@/lib/queryClient'
-import NotFoundPage from '@/pages/NotFoundPage'
-import StatusPage from '@/pages/StatusPage'
+import { AppLayout } from '@/components/common/AppLayout'
+import { ProtectedRoute, PublicOnlyRoute } from '@/components/auth/ProtectedRoute'
+import { Spinner } from '@/components/ui/feedback'
+import { useThemeSync } from '@/hooks/useThemeSync'
+
+// Route-level code splitting keeps the initial bundle small (charts load only where used).
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const StatusPage = lazy(() => import('@/pages/StatusPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 export function AppRoutes() {
+  useThemeSync()
   return (
-    <Routes>
-      <Route path="/" element={<StatusPage />} />
-      <Route path="/status" element={<StatusPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <Suspense fallback={<Spinner className="min-h-screen" />}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+        <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
+        <Route path="/status" element={<StatusPage />} />
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   )
 }
 

@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './App'
 import { renderWithProviders } from './test/utils'
 import { healthService } from './services/healthService'
+import { useAuthStore } from './store/authStore'
 
 describe('AppRoutes', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    useAuthStore.getState().clear()
   })
 
   it('shows API and database status on the status page', async () => {
@@ -30,9 +32,27 @@ describe('AppRoutes', () => {
     expect(await screen.findByText('API unreachable')).toBeInTheDocument()
   })
 
-  it('renders the 404 page for unknown routes', () => {
+  it('renders the 404 page for unknown routes', async () => {
     renderWithProviders(<AppRoutes />, { route: '/does-not-exist' })
 
-    expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from protected pages to login', async () => {
+    renderWithProviders(<AppRoutes />, { route: '/settings' })
+
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+  })
+
+  it('sends signed-in users away from the login page', async () => {
+    useAuthStore.getState().setSession({
+      accessToken: 'token',
+      refreshToken: 'refresh',
+      user: { userId: '1', email: 'a@example.com', fullName: 'Asha Rao' },
+    })
+
+    renderWithProviders(<AppRoutes />, { route: '/login' })
+
+    expect(await screen.findByRole('heading', { name: 'Welcome, Asha' })).toBeInTheDocument()
   })
 })

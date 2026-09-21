@@ -1,5 +1,7 @@
-import axios, { AxiosError, type AxiosResponse } from 'axios'
+import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiEnvelope, ApiErrorEnvelope, Paged } from '@/types/common'
+import type { RefreshResponse } from '@/types/auth'
+import { useAuthStore } from '@/store/authStore'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
 
@@ -21,6 +23,64 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
   timeout: 30_000,
 })
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+let refreshInFlight: Promise<string | null> | null = null
+
+/**
+ * Exchanges the stored refresh token for a new token pair. Concurrent 401s share one request so a
+ * single-use refresh token is never presented twice.
+ */
+export function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    const refreshToken = useAuthStore.getState().refreshToken
+    refreshInFlight = (async () => {
+      if (!refreshToken) return null
+      try {
+        const response = await axios.post<ApiEnvelope<RefreshResponse>>(
+          `${API_BASE_URL}/auth/refresh`,
+          { refreshToken },
+          { headers: { 'Content-Type': 'application/json' } },
+        )
+        const { accessToken, refreshToken: next } = response.data.data
+        useAuthStore.getState().setTokens({ accessToken, refreshToken: next })
+        return accessToken
+      } catch {
+        useAuthStore.getState().clear()
+        return null
+      }
+    })().finally(() => {
+      refreshInFlight = null
+    })
+  }
+  return refreshInFlight
+}
+
+type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean }
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const config = error.config as RetriableConfig | undefined
+    const isAuthCall = config?.url?.startsWith('/auth/')
+    if (error.response?.status === 401 && config && !config._retried && !isAuthCall) {
+      config._retried = true
+      const token = await refreshAccessToken()
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+        return api(config)
+      }
+    }
+    return Promise.reject(error)
+  },
+)
 
 /** Converts any axios failure into an {@link ApiError} with the backend's code when available. */
 export function toApiError(error: unknown): ApiError {
@@ -71,4 +131,9 @@ export function cleanParams<T extends object>(params: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''),
   ) as Partial<T>
+}
+
+/** Human-readable message for any error thrown by a service call. */
+export function errorMessage(error: unknown): string {
+  return toApiError(error).message
 }
