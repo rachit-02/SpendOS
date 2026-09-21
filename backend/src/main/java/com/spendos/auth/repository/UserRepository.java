@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends BaseRepository<User> {
     boolean existsByEmailIgnoreCase(String email);
 
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
+
     Optional<User> findByEmailIgnoreCaseAndDeletedAtIsNull(String email);
 
     Optional<User> findByIdAndDeletedAtIsNull(UUID id);

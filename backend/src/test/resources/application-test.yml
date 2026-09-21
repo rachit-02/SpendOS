@@ -10,3 +10,10 @@ jwt:
 
 cors:
   allowed-origins: http://localhost:3000
+
+app:
+  # Rate limiting has a dedicated test; everywhere else it would make tests order-dependent.
+  rate-limit:
+    enabled: false
+  scheduling:
+    enabled: false

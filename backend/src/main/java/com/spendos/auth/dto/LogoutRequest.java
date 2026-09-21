@@ -1,6 +1,5 @@
 package com.spendos.auth.dto;
 
-import jakarta.validation.constraints.NotBlank;
-
-public record LogoutRequest(@NotBlank String refreshToken) {
+/** Optional body for logout; when present the refresh token is revoked along with the access token. */
+public record LogoutRequest(String refreshToken) {
 }
