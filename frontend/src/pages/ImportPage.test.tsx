@@ -6,7 +6,7 @@ import { importService } from '@/services/importService'
 import { accountService } from '@/services/accountService'
 import { ApiError } from '@/services/api'
 import { renderWithProviders } from '@/test/utils'
-import { validateCsvFile } from '@/components/imports/csvValidation'
+import { validateStatementFile } from '@/components/imports/csvValidation'
 
 const account = {
   id: 'acc-1',
@@ -36,14 +36,15 @@ function csvFile(content = 'Date,Description,Amount\n05-09-2026,Zomato,-450\n', 
   return new File([content], name, { type: 'text/csv' })
 }
 
-describe('validateCsvFile', () => {
-  it('accepts csv and rejects other types, empty and oversized files', () => {
-    expect(validateCsvFile(csvFile())).toBeNull()
-    expect(validateCsvFile(new File(['x'], 'photo.png'))).toMatch(/Only CSV/)
-    expect(validateCsvFile(new File([], 'empty.csv'))).toMatch(/empty/)
-    const big = new File(['x'], 'big.csv')
+describe('validateStatementFile', () => {
+  it('accepts csv and pdf and rejects other types, empty and oversized files', () => {
+    expect(validateStatementFile(csvFile())).toBeNull()
+    expect(validateStatementFile(new File(['%PDF-1.7'], 'statement.pdf', { type: 'application/pdf' }))).toBeNull()
+    expect(validateStatementFile(new File(['x'], 'photo.png'))).toMatch(/Only CSV or PDF/)
+    expect(validateStatementFile(new File([], 'empty.csv'))).toMatch(/empty/)
+    const big = new File(['x'], 'big.pdf')
     Object.defineProperty(big, 'size', { value: 51 * 1024 * 1024 })
-    expect(validateCsvFile(big)).toMatch(/limit is 50 MB/)
+    expect(validateStatementFile(big)).toMatch(/limit is 50 MB/)
   })
 })
 
@@ -100,13 +101,45 @@ describe('ImportPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('already been imported')
   })
 
-  it('refuses non-CSV files before uploading', async () => {
+  it('uploads a PDF statement without trying to preview it as CSV', async () => {
+    const upload = vi.spyOn(importService, 'upload').mockResolvedValue({ importJobId: 'job-2', status: 'processing', message: 'started' })
+    vi.spyOn(importService, 'status').mockResolvedValue({ importJobId: 'job-2', status: 'completed', progress: { processed: 37, total: 37, percentage: 100 } })
+    vi.spyOn(importService, 'get').mockResolvedValue({ ...completedJob, id: 'job-2', fileName: 'statement.pdf' })
+    vi.spyOn(importService, 'errors').mockResolvedValue({
+      items: [], pagination: { totalItems: 0, totalPages: 0, currentPage: 1, pageSize: 10, hasNext: false, hasPrevious: false },
+    })
+    renderWithProviders(<ImportPage />)
+    await waitFor(() => expect(screen.getByLabelText('Import into account')).toHaveValue('acc-1'))
+
+    const pdf = new File(['%PDF-1.7 ...'], 'statement.pdf', { type: 'application/pdf' })
+    fireEvent.change(screen.getByTestId('file-input'), { target: { files: [pdf] } })
+
+    expect(await screen.findByTestId('pdf-note')).toHaveTextContent("scanned or photographed pages can't be read yet")
+    expect(screen.queryByLabelText('File preview')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Import transactions' }))
+    expect(upload).toHaveBeenCalledWith(pdf, 'acc-1', undefined)
+  })
+
+  it("shows the server's explanation when a PDF can't be read", async () => {
+    vi.spyOn(importService, 'upload').mockRejectedValue(new ApiError(
+      "This PDF is a scanned image: it contains pictures of the pages but no selectable text. SpendOS can't read scanned statements yet (that needs OCR).",
+      'PDF_SCANNED_IMAGE', 400))
+    renderWithProviders(<ImportPage />)
+    await waitFor(() => expect(screen.getByLabelText('Import into account')).toHaveValue('acc-1'))
+
+    fireEvent.change(screen.getByTestId('file-input'), { target: { files: [new File(['%PDF-1.4'], 'scan.pdf')] } })
+    await userEvent.click(screen.getByRole('button', { name: 'Import transactions' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('needs OCR')
+  })
+
+  it('refuses unsupported files before uploading', async () => {
     const upload = vi.spyOn(importService, 'upload')
     renderWithProviders(<ImportPage />)
 
     fireEvent.change(await screen.findByTestId('file-input'), { target: { files: [new File(['x'], 'photo.png')] } })
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Only CSV files')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Only CSV or PDF')
     expect(screen.getByRole('button', { name: 'Import transactions' })).toBeDisabled()
     expect(upload).not.toHaveBeenCalled()
   })

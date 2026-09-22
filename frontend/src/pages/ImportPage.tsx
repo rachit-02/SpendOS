@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Label, Select } from '@/components/ui/input'
 import { CSVUpload } from '@/components/imports/CSVUpload'
 import { ImportPreview } from '@/components/imports/ImportPreview'
+import { isPdfFile } from '@/components/imports/csvValidation'
 import { ImportProgress } from '@/components/imports/ImportProgress'
 import { ImportSummary } from '@/components/imports/ImportSummary'
 import { ImportHistory } from '@/components/imports/ImportHistory'
@@ -74,7 +75,7 @@ export default function ImportPage() {
 
   return (
     <>
-      <PageHeader title="Import transactions" description="Upload a CSV statement exported from your bank, card or wallet." />
+      <PageHeader title="Import transactions" description="Upload a CSV or PDF statement from your bank, card or wallet." />
       <div className="grid gap-6">
         <Card>
           <CardHeader>
@@ -126,7 +127,14 @@ export default function ImportPage() {
                   </div>
                 )}
                 <CSVUpload file={file} onFileSelected={(f) => { setFile(f); setError(null) }} disabled={upload.isPending} />
-                {file && <ImportPreview file={file} />}
+                {file && (isPdfFile(file)
+                  ? (
+                    <p className="text-sm text-muted-foreground" data-testid="pdf-note">
+                      PDF statement: SpendOS reads the transaction table when you import. Statements downloaded from
+                      your bank's website or app work best; scanned or photographed pages can't be read yet.
+                    </p>
+                  )
+                  : <ImportPreview file={file} />)}
                 {error && (
                   <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
                     {error}

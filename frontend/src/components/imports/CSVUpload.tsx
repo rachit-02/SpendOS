@@ -1,8 +1,8 @@
 import { useRef, useState, type DragEvent } from 'react'
-import { FileSpreadsheet, UploadCloud } from 'lucide-react'
+import { FileSpreadsheet, FileText, UploadCloud } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { formatBytes } from '@/utils/formatters'
-import { validateCsvFile } from './csvValidation'
+import { isPdfFile, validateStatementFile } from './csvValidation'
 
 interface Props {
   file: File | null
@@ -18,7 +18,7 @@ export function CSVUpload({ file, onFileSelected, disabled }: Props) {
 
   function accept(candidate: File | undefined) {
     if (!candidate) return
-    const problem = validateCsvFile(candidate)
+    const problem = validateStatementFile(candidate)
     setError(problem)
     onFileSelected(problem ? null : candidate)
   }
@@ -57,7 +57,9 @@ export function CSVUpload({ file, onFileSelected, disabled }: Props) {
       >
         {file ? (
           <>
-            <FileSpreadsheet className="h-10 w-10 text-primary" aria-hidden="true" />
+            {isPdfFile(file)
+              ? <FileText className="h-10 w-10 text-primary" aria-hidden="true" />
+              : <FileSpreadsheet className="h-10 w-10 text-primary" aria-hidden="true" />}
             <div>
               <p className="font-medium">{file.name}</p>
               <p className="text-sm text-muted-foreground">{formatBytes(file.size)} · click to choose another file</p>
@@ -68,14 +70,14 @@ export function CSVUpload({ file, onFileSelected, disabled }: Props) {
             <UploadCloud className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
             <div>
               <p className="font-medium">Drop your statement here, or click to browse</p>
-              <p id="upload-help" className="text-sm text-muted-foreground">CSV exported from your bank or card · up to 50 MB</p>
+              <p id="upload-help" className="text-sm text-muted-foreground">CSV or PDF statement from your bank or card · up to 50 MB</p>
             </div>
           </>
         )}
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,.txt,text/csv"
+          accept=".csv,.txt,.pdf,text/csv,application/pdf"
           className="sr-only"
           aria-label="Statement file"
           data-testid="file-input"
