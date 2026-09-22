@@ -54,8 +54,9 @@ public final class CsvStatementParser {
         }
     }
 
+    /** {@code format} is "csv" or "pdf"; {@code delimiter} is only meaningful for CSV. */
     public record ParsedFile(ColumnMapping mapping, List<RawRow> rows, char delimiter, boolean hasHeader,
-                             List<String> header) {
+                             List<String> header, String format) {
     }
 
     private CsvStatementParser() {
@@ -105,7 +106,7 @@ public final class CsvStatementParser {
         if (rows.isEmpty()) {
             throw invalid("The file has a header but no transaction rows");
         }
-        return new ParsedFile(mapping, rows, delimiter, headerIndex >= 0, header);
+        return new ParsedFile(mapping, rows, delimiter, headerIndex >= 0, header, "csv");
     }
 
     /** UTF-8 (with or without BOM) first; falls back to Windows-1252, common for bank exports. */
@@ -174,16 +175,22 @@ public final class CsvStatementParser {
 
     private static int findHeader(List<CSVRecord> records) {
         for (int i = 0; i < Math.min(HEADER_SEARCH_LIMIT, records.size()); i++) {
-            List<String> normalized = values(records.get(i)).stream().map(CsvStatementParser::normalize).toList();
-            boolean hasDate = normalized.stream().anyMatch(h -> DATE_HEADERS.contains(h) || h.endsWith("date"));
-            boolean hasAmount = normalized.stream().anyMatch(h -> AMOUNT_HEADERS.contains(h)
-                    || DEBIT_HEADERS.contains(h) || CREDIT_HEADERS.contains(h) || h.contains("amount"));
-            boolean anyDateValue = values(records.get(i)).stream().anyMatch(DateParser::looksLikeDate);
-            if (hasDate && hasAmount && !anyDateValue) {
+            if (looksLikeHeader(values(records.get(i)))) {
                 return i;
             }
         }
         return -1;
+    }
+
+    /** A statement header row: names a date and an amount column, and holds no date values. Shared with PDF import. */
+    static boolean looksLikeHeader(List<String> cells) {
+        List<String> normalized = cells.stream().map(CsvStatementParser::normalize).toList();
+        boolean hasDate = normalized.stream().anyMatch(h -> DATE_HEADERS.contains(h) || h.endsWith("date"));
+        boolean hasAmount = normalized.stream().anyMatch(h -> AMOUNT_HEADERS.contains(h)
+                || DEBIT_HEADERS.contains(h) || CREDIT_HEADERS.contains(h) || h.contains("amount")
+                || h.startsWith("withdrawal") || h.startsWith("deposit"));
+        boolean anyDateValue = cells.stream().anyMatch(DateParser::looksLikeDate);
+        return hasDate && hasAmount && !anyDateValue;
     }
 
     static ColumnMapping mapHeader(List<String> header) {

@@ -9,6 +9,7 @@ import com.spendos.imports.dto.ImportDtos.ImportJobResponse;
 import com.spendos.imports.dto.ImportDtos.ImportStatusResponse;
 import com.spendos.imports.dto.ImportDtos.UploadResponse;
 import com.spendos.imports.parser.CsvStatementParser;
+import com.spendos.imports.parser.PdfStatementParser;
 import com.spendos.imports.parser.CsvStatementParser.ParsedFile;
 import com.spendos.imports.repository.ImportErrorRepository;
 import com.spendos.imports.repository.ImportJobRepository;
@@ -40,10 +41,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class ImportService {
 
     public static final long MAX_FILE_BYTES = 50L * 1024 * 1024;
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("csv", "txt");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("csv", "txt", "pdf");
     // Windows browsers report .csv as application/vnd.ms-excel; octet-stream comes from some clients.
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("text/csv", "text/plain", "application/csv",
-            "text/comma-separated-values", "application/vnd.ms-excel", "application/octet-stream");
+            "text/comma-separated-values", "application/vnd.ms-excel", "application/octet-stream",
+            "application/pdf", "application/x-pdf");
     private static final Map<String, String> SORT_FIELDS = Map.of("createdAt", "createdAt", "fileName", "fileName");
 
     private static final Logger log = LoggerFactory.getLogger(ImportService.class);
@@ -76,7 +78,8 @@ public class ImportService {
                     throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_IMPORT",
                             "This file has already been imported", Map.of("importJobId", previous.getId()));
                 });
-        ParsedFile parsed = CsvStatementParser.parse(bytes);
+        // The format is decided by the file's content, not its name: users should not need to care.
+        ParsedFile parsed = PdfStatementParser.isPdf(bytes) ? PdfStatementParser.parse(bytes) : CsvStatementParser.parse(bytes);
 
         ImportJob job = new ImportJob();
         job.setUserId(userId);
@@ -160,18 +163,25 @@ public class ImportService {
         String name = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase(Locale.ROOT);
         String extension = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : "";
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw ApiException.badRequest("INVALID_FILE_TYPE", "File must be CSV format (.csv)");
+            throw ApiException.badRequest("INVALID_FILE_TYPE", "File must be a CSV or PDF bank statement (.csv or .pdf)");
         }
         String contentType = file.getContentType() == null ? null
                 : file.getContentType().toLowerCase(Locale.ROOT).split(";")[0].trim();
         if (contentType != null && !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw ApiException.badRequest("INVALID_FILE_TYPE", "File must be CSV format");
+            throw ApiException.badRequest("INVALID_FILE_TYPE", "File must be a CSV or PDF bank statement");
         }
         byte[] bytes;
         try {
             bytes = file.getBytes();
         } catch (IOException exception) {
             throw ApiException.badRequest("INVALID_FILE_TYPE", "Could not read the uploaded file");
+        }
+        if (PdfStatementParser.isPdf(bytes)) {
+            return bytes; // PDFs are binary by nature; the PDF parser validates them
+        }
+        if (extension.equals("pdf")) {
+            throw ApiException.badRequest("INVALID_PDF", "This file has a .pdf name but is not a PDF. "
+                    + "Download the statement from your bank again.");
         }
         for (int i = 0; i < Math.min(bytes.length, 8192); i++) {
             if (bytes[i] == 0) {

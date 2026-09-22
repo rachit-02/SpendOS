@@ -36,6 +36,7 @@
         <!-- 1.21+ negotiates the Docker API version; older releases fail against Docker Engine 29 -->
         <testcontainers.version>1.21.4</testcontainers.version>
         <openpdf.version>2.0.3</openpdf.version>
+        <pdfbox.version>3.0.8</pdfbox.version>
 
         <!-- Security patch overrides of Boot-managed versions (OSV/OWASP scan, Phase 15).
              Remove each once the Spring Boot parent ships the same or a newer version. -->
@@ -147,6 +148,13 @@
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
             <version>${openpdf.version}</version>
+        </dependency>
+
+        <!-- Reading text-based PDF bank statements (import). OpenPDF above is only used to write reports. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
 
         <!-- Springdoc OpenAPI (Swagger) -->

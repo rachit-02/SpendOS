@@ -235,7 +235,10 @@ public class ImportProcessor {
         errors.forEach(error -> byCode.merge(error.getErrorCode(), 1, Integer::sum));
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("errorsByCode", byCode);
-        summary.put("delimiter", parsed.delimiter() == '\t' ? "tab" : String.valueOf(parsed.delimiter()));
+        summary.put("format", parsed.format());
+        if ("csv".equals(parsed.format())) {
+            summary.put("delimiter", parsed.delimiter() == '\t' ? "tab" : String.valueOf(parsed.delimiter()));
+        }
         summary.put("hasHeader", parsed.hasHeader());
         summary.put("dateOrder", validation.dateOrder().name());
         summary.put("columns", parsed.mapping().describe());
