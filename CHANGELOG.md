@@ -3,6 +3,42 @@
 All notable changes to SpendOS. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **PDF bank statement import** alongside CSV, on the same `POST /imports/upload` endpoint. The format
+  is detected from the file's content. Text-based PDFs are read with Apache PDFBox from glyph
+  positions:
+  - the header row is found with the same column vocabulary as CSV, including headers stacked over two
+    or three lines;
+  - column boundaries are placed in the whitespace between columns;
+  - wrapped narrations, dates wrapped over several lines and vertically centred cells are joined to the
+    right transaction.
+  The result feeds the unchanged CSV pipeline (validation, duplicate detection, merchant normalization,
+  categorization).
+- Clear, synchronous errors for scanned (image-only) PDFs, partly scanned PDFs, password-protected,
+  damaged and non-statement PDFs; none of them creates an import job.
+- Test fixtures: synthetic statements (fake data) in HDFC-, SBI- and ICICI-like layouts rendered by
+  Chrome, credit-card and US-bank layouts rendered by OpenPDF, plus broken and scanned PDFs;
+  generators in `tools/pdf-fixtures`.
+
+### Known limitations of PDF import
+
+- **Scanned statements are not supported** (no OCR). They are detected and rejected with an explanation.
+- Tested only against synthetic statements built to resemble common layouts, not against real bank
+  PDFs. Layouts likely to break:
+  - tables without a header row;
+  - statements whose header uses words outside the known vocabulary (e.g. "Particulars" works,
+    "Txn Info" does not);
+  - two-column page layouts or several transaction tables side by side;
+  - rows whose amount is on a different line from the date;
+  - PDFs whose fonts have no character map (rejected as unreadable).
+- A page footer or note that starts with a date inside the date column could become a row; if it has
+  an amount it shows up as a skipped or extra row rather than being silently dropped.
+- Duplicate detection (unchanged from CSV) works per user across all accounts, so the same merchant and
+  amount on the same day in two different accounts is flagged as a possible duplicate.
+
 ## [1.0.0] - 2026-09-21
 
 First feature-complete MVP, built phase by phase from DEVELOPMENT_PLAN.md.

@@ -417,11 +417,12 @@ Response with JWT token
 
 ### Transaction Import Flow
 ```
-User uploads CSV
+User uploads a CSV or PDF statement
     ↓
 ImportController.uploadFile
     ↓
-CSVParser (parse file, detect format)
+CsvStatementParser or PdfStatementParser (chosen by file content; both return the
+same ParsedFile of columns and rows, so every later step is shared)
     ↓
 TransactionValidator (row-level validation)
     ↓
@@ -488,7 +489,7 @@ Always: User.findByIdAndAuthenticatedUser(userId, currentUser)
 ### Input Validation
 - DTO validation with @Valid annotations
 - Custom validators for financial amounts
-- CSV file type/size validation
+- CSV/PDF file type/size validation (PDF detected by its %PDF- signature)
 - XSS protection through JSON encoding
 - SQL injection protection via JPA parameterization
 

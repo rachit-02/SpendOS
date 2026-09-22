@@ -27,7 +27,7 @@ SpendOS answers critical financial questions:
 
 - 🔐 **Secure Authentication** - JWT-based login with no financial credential storage
 - 📊 **Beautiful Dashboard** - Premium visualization of financial overview
-- 📈 **Transaction Import** - CSV/statement file upload with smart parsing
+- 📈 **Transaction Import** - CSV or text-based PDF bank statements, with smart parsing (scanned PDFs are not supported)
 - 🏷️ **Auto-Categorization** - Intelligent merchant and category matching
 - 💡 **Financial Insights** - Spending anomalies, money leaks, recurring payments
 - 📋 **Budgeting** - Create and track monthly budgets with alerts

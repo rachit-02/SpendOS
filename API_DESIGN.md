@@ -635,7 +635,7 @@ Response (200 OK):
 }
 ```
 
-### Upload CSV Import
+### Upload Statement Import (CSV or PDF)
 
 ```
 POST /api/v1/imports/upload
@@ -645,8 +645,9 @@ Headers:
   Content-Type: multipart/form-data
 
 Form Data:
-  file: (CSV file, max 50MB)
-  accountId: UUID (account to import into)
+  file: (CSV or text-based PDF bank statement, max 50MB; the format is detected from the
+        file's content, not its name)
+  accountId: UUID (account to import into; optional, defaults to the primary account)
   dateFormat: string (optional, e.g., 'DD-MM-YYYY')
 
 Response (202 Accepted - Async processing):
@@ -661,9 +662,20 @@ Response (202 Accepted - Async processing):
 
 Errors:
 - 401: Unauthorized
-- 400: File type not CSV
+- 400 INVALID_FILE_TYPE: not a CSV or PDF, or CSV with no recognisable columns
+- 400 INVALID_PDF: named .pdf but not a PDF
+- 400 PDF_SCANNED_IMAGE: scanned/photographed PDF with no text layer (OCR is not supported)
+- 400 PDF_PARTLY_SCANNED: some pages have no text; rejected rather than imported partially
+- 400 PDF_PASSWORD_PROTECTED: encrypted PDF
+- 400 PDF_UNREADABLE / PDF_UNREADABLE_TEXT: damaged file, or text that can't be extracted
+- 400 PDF_NO_TABLE / PDF_NO_TRANSACTIONS: no transaction table (or an empty one) was found
+- 400 PDF_TOO_LONG / PDF_TOO_COMPLEX: over 300 pages, or too slow to read
+- 409 DUPLICATE_IMPORT: the same file was already imported
 - 413: File too large
 - 400: Invalid account ID
+
+All file errors are returned synchronously, before an import job is created, so a bad file never
+produces an empty or partial import.
 ```
 
 ### Check Import Status
