@@ -62,7 +62,8 @@ spring:
 
 # Server Configuration
 server:
-  port: ${APP_PORT:8080}
+  # PORT is injected by container hosts such as Railway, Heroku and Cloud Run.
+  port: ${APP_PORT:${PORT:8080}}
   servlet:
     context-path: /api
     # Always declare UTF-8 so currency symbols (e.g. the rupee sign) survive every client.

@@ -17,7 +17,9 @@ logging:
     root: WARN
     com.spendos: INFO
   file:
-    name: /var/log/spendos/spendos.log
+    # Writable by the container's non-root user. On hosts with ephemeral disks (Railway, Cloud Run)
+    # the console output is what gets collected; the file is a local convenience.
+    name: ${LOG_FILE_PATH:/app/logs/spendos.log}
   logback:
     rollingpolicy:
       max-file-size: 100MB
