@@ -113,7 +113,40 @@ dashboard/transactions/insights/budgets) on a single backend container. Re-run a
 Targets from DEVELOPMENT_PLAN.md: API median < 200 ms, dashboard < 2 s, error rate < 1%.
 Record each run's results (median, p95, error rate, hardware) in CHANGELOG.md.
 
-## 8. Troubleshooting
+## 8. Hosting the frontend on Vercel (UI only)
+
+Vercel can serve the React frontend, but **not** the Spring Boot backend or PostgreSQL. Without a
+backend reachable from the browser, only pages that need no data work; sign-in, registration and
+everything behind them fail. Host the backend and database elsewhere (a container host plus managed
+Postgres) and point the frontend at them.
+
+Project settings (Vercel dashboard → Settings → Build & Deployment):
+
+| Setting | Value |
+|---|---|
+| Root Directory | `frontend` (**not** the repository root: this is a monorepo) |
+| Framework Preset | Vite |
+| Build Command | `npm run build` (from `frontend/vercel.json`) |
+| Output Directory | `dist` |
+| Install Command | `npm ci` |
+
+With the root directory left at the repository root, Vercel finds nothing to build, publishes an empty
+output and every URL returns 404 while the deployment still shows "Ready".
+
+`frontend/vercel.json` also adds:
+- a rewrite of all non-`/api` paths to `index.html`, without which a refresh on `/dashboard` or
+  `/login` returns 404 (static hosting has no server-side router);
+- the same security headers nginx sets in the Docker deployment.
+
+Pointing the deployed UI at a backend:
+1. Deploy the backend somewhere that runs containers, with its own PostgreSQL.
+2. Set `CORS_ALLOWED_ORIGINS` on the backend to the Vercel URL.
+3. In Vercel, set `VITE_API_BASE_URL` to the backend's API base (e.g. `https://api.example.com/api/v1`)
+   and redeploy; it is read at build time, not at runtime.
+4. Widen `connect-src` in the `Content-Security-Policy` in `frontend/vercel.json` to include that
+   backend origin, otherwise the browser blocks the requests.
+
+## 9. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
