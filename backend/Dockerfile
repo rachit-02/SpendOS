@@ -3,12 +3,13 @@ FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /build
 
-# Resolve dependencies first so they are cached between source changes
+# Resolve dependencies first so they are cached between source changes.
+# The cache mount needs an explicit id: some builders (Railway) reject one without it.
 COPY pom.xml .
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
+RUN --mount=type=cache,id=maven-cache,target=/root/.m2 mvn -B -q dependency:go-offline
 
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests
+RUN --mount=type=cache,id=maven-cache,target=/root/.m2 mvn -B -q clean package -DskipTests
 
 # Stage 2: Runtime stage
 FROM eclipse-temurin:17-jre-alpine
