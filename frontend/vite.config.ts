@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => ({
   esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : undefined,
 
   build: {
+    // Also the outputDirectory in vercel.json and what frontend/Dockerfile copies into nginx.
     outDir: 'dist',
     sourcemap: false,
     rollupOptions: {

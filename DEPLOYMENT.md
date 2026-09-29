@@ -133,14 +133,17 @@ Project settings (Vercel dashboard → Settings → Build & Deployment):
 With the root directory left at the repository root, Vercel finds nothing to build, publishes an empty
 output and every URL returns 404 while the deployment still shows "Ready".
 
-Changing the root directory afterwards does not repair the existing deployment, and "Redeploy" in the
-dashboard can rebuild it from the settings captured when it was first created, so the URL keeps returning
-404 with the setting apparently correct. Push a commit to the production branch to force a genuinely fresh
-build under the current settings, and check the deploy log installs the frontend dependencies and prints
-the Vite `dist/assets/...` table; a build that finishes in a second without installing anything was still
-built from the repository root. A Vercel build uses the whole file tree at a commit, not that commit's
-changes, so a deployment built from a commit that only touched the backend still contains the frontend
-configuration.
+The setting is easy to leave unsaved: it has its own save button, and a root directory still showing `./`
+after the form was filled in is what produced a 404 on this project. Changing it afterwards does not
+repair the existing deployment, and "Redeploy" in the dashboard can rebuild from the settings captured
+when the deployment was created, so the URL keeps returning 404 with the setting apparently correct.
+With "Only build if there are changes in the root directory" (Settings → Git) on, a commit that touches
+nothing under `frontend/` is skipped and no new deployment appears at all. Push a commit that changes a
+file under `frontend/` to force a fresh build under the current settings, and check that the deploy log
+installs the frontend dependencies and prints the Vite `dist/assets/...` table; a build that finishes in
+a second without installing anything was still built from the repository root. A Vercel build uses the
+whole file tree at a commit, not that commit's changes, so a deployment built from a commit that only
+touched the backend still contains the frontend configuration.
 
 `frontend/vercel.json` also adds:
 - a rewrite of all non-`/api` paths to `index.html`, without which a refresh on `/dashboard` or
