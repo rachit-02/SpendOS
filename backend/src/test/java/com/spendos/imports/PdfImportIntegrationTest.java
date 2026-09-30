@@ -146,6 +146,38 @@ class PdfImportIntegrationTest extends IntegrationTestBase {
         assertThat(starbucks.get("transaction_date").toString()).isEqualTo("2026-08-03");
     }
 
+    /**
+     * A wallet statement: one unsigned amount column, with the direction of the money only in the
+     * narration. Every row used to be rejected as "Unrecognized date '01 Au'" because the widely spaced
+     * header labels each became a column.
+     */
+    @Test
+    void walletStatementImportsWithTheDirectionReadFromTheNarration() throws Exception {
+        session = TestAuth.newSession(mockMvc);
+        account = testData.account(session.userId());
+
+        JsonNode wallet = importAndWait("wallet.pdf", "application/pdf", fixture("wallet-style.pdf"));
+        assertThat(wallet.get("invalidCount").asInt()).as(wallet.toString()).isZero();
+        assertThat(wallet.get("importedCount").asInt()).isEqualTo(26);
+
+        Map<String, Object> counts = jdbc.queryForMap("""
+                SELECT count(*) FILTER (WHERE transaction_type = 'credit') AS credits,
+                       count(*) FILTER (WHERE transaction_type = 'debit') AS debits
+                FROM transactions WHERE user_id = ?""", session.userId());
+        // "Received from ..." is money in, "Paid to ..." money out; without the narration every row
+        // would have been spending.
+        assertThat(((Number) counts.get("credits")).intValue()).isEqualTo(2);
+        assertThat(((Number) counts.get("debits")).intValue()).isEqualTo(24);
+
+        Map<String, Object> received = jdbc.queryForMap("""
+                SELECT transaction_type, amount, transaction_date FROM transactions
+                WHERE user_id = ? AND raw_description LIKE 'Received from%' ORDER BY transaction_date LIMIT 1""",
+                session.userId());
+        assertThat(received.get("transaction_type")).isEqualTo("credit");
+        assertThat((BigDecimal) received.get("amount")).isEqualByComparingTo("85000");
+        assertThat(received.get("transaction_date").toString()).isEqualTo("2026-08-01");
+    }
+
     @Test
     void sameFileTwiceIsRejectedAndAPdfWithACsvNameStillWorks() throws Exception {
         byte[] pdf = fixture("icici-style.pdf");

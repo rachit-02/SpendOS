@@ -30,7 +30,7 @@ public final class CsvStatementParser {
     private static final int HEADER_SEARCH_LIMIT = 25;
 
     private static final Set<String> DATE_HEADERS = Set.of("date", "transactiondate", "txndate", "valuedate",
-            "postingdate", "trandate", "transdate", "bookingdate");
+            "postingdate", "trandate", "transdate", "bookingdate", "datetime", "dateandtime");
     private static final Set<String> DESCRIPTION_HEADERS = Set.of("description", "narration", "particulars", "details",
             "remarks", "merchant", "merchantname", "payee", "name", "transactiondetails", "transactionremarks",
             "transactiondescription", "memo");

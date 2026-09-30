@@ -43,6 +43,32 @@ class PdfStatementParserTest {
         assertThat(PdfStatementParser.isPdf(new byte[] {'%', 'P'})).isFalse();
     }
 
+    /**
+     * A wallet statement (Google Pay style) whose header labels are spaced more widely than a word space.
+     * Each word of "Date & time" is then its own cluster, and taking each as a column put the column edges
+     * inside the rows' own text, cutting "01 Aug, 2026" into "01 Au" | "g," | "2026" and rejecting every row.
+     */
+    @Test
+    void walletStyleKeepsMultiWordHeaderLabelsInOneColumn() throws IOException {
+        ParsedFile file = parse("wallet-style.pdf");
+        ColumnMapping m = file.mapping();
+
+        assertThat(file.header()).containsExactly("Date & time", "Transaction details", "Amount");
+        assertThat(m.date()).isZero();
+        assertThat(m.description()).isEqualTo(1);
+        assertThat(m.amount()).isEqualTo(2);
+
+        assertThat(file.rows()).isNotEmpty();
+        assertThat(file.rows()).allSatisfy(row -> {
+            assertThat(cell(row, m.date())).matches("\\d{2} [A-Z][a-z]{2}, 2026");
+            assertThat(cell(row, m.amount())).isNotBlank();
+        });
+
+        RawRow first = file.rows().get(0);
+        assertThat(cell(first, m.date())).isEqualTo("01 Aug, 2026");
+        assertThat(cell(first, m.description())).startsWith("Received from ");
+    }
+
     @Test
     void hdfcStyleWithSplitHeadersWrappedNarrationsAndTwoPages() throws IOException {
         ParsedFile file = parse("hdfc-style.pdf");

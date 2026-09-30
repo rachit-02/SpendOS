@@ -40,6 +40,23 @@ class StatementRowValidatorTest {
     }
 
     @Test
+    void walletNarrationDecidesTheDirectionWhenAmountsAreUnsigned() {
+        // Wallet statements (Google Pay, PhonePe) have one unsigned amount column; a credit row says
+        // "Received from <someone>" and then names the account the money was paid to, so credit wins.
+        Result result = validate("""
+                Date & time,Transaction details,Amount
+                05-09-2026,Paid to BLINKIT COMMERCE PRIVATE LIMITED,177
+                06-09-2026,Received from Ananya Rao Paid to Bank of Baroda 9384,150
+                07-09-2026,Sent to Kajal Sen,160
+                08-09-2026,SOME OTHER NARRATION,99
+                """);
+
+        assertThat(result.errors()).isEmpty();
+        assertThat(result.candidates()).extracting(Candidate::type)
+                .containsExactly("debit", "credit", "debit", "debit");
+    }
+
+    @Test
     void typeColumnAndDebitCreditColumnsAreRespected() {
         Result typed = validate("Date,Description,Amount,Type\n05-09-2026,Refund,100,CR\n06-09-2026,Uber,250,DR\n");
         assertThat(typed.candidates()).extracting(Candidate::type).containsExactly("credit", "debit");

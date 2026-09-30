@@ -19,9 +19,21 @@ and the project uses [Semantic Versioning](https://semver.org/).
   categorization).
 - Clear, synchronous errors for scanned (image-only) PDFs, partly scanned PDFs, password-protected,
   damaged and non-statement PDFs; none of them creates an import job.
-- Test fixtures: synthetic statements (fake data) in HDFC-, SBI- and ICICI-like layouts rendered by
-  Chrome, credit-card and US-bank layouts rendered by OpenPDF, plus broken and scanned PDFs;
-  generators in `tools/pdf-fixtures`.
+- Test fixtures: synthetic statements (fake data) in HDFC-, SBI-, ICICI- and wallet-like layouts
+  rendered by Chrome, credit-card and US-bank layouts rendered by OpenPDF, plus broken and scanned
+  PDFs; generators in `tools/pdf-fixtures`.
+
+### Fixed
+
+- **Wallet and UPI statements (Google Pay, PhonePe, Paytm) rejected every row** with an error such as
+  `Unrecognized date '01 Au'`. Their header labels are spaced more widely than a word space, so each
+  word of "Date & time" was taken for a separate column, and the column edges landed inside the rows'
+  own text, cutting "01 Aug, 2026" into "01 Au" | "g," | "2026". Two header labels now only start
+  different columns when the rows below them leave a whitespace corridor in between, and a column edge
+  is never placed in a gap narrower than a space. "Date & time" is also recognised as a date header.
+- Statements with a single unsigned amount column and no type column imported every row as spending,
+  including money received. When nothing else says which way the money went, the narration now decides
+  ("Received from ..." is money in, "Paid to ..." money out).
 
 ### Known limitations of PDF import
 
@@ -33,6 +45,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
     "Txn Info" does not);
   - two-column page layouts or several transaction tables side by side;
   - rows whose amount is on a different line from the date;
+  - statements where a column has no header label at all;
   - PDFs whose fonts have no character map (rejected as unreadable).
 - A page footer or note that starts with a date inside the date column could become a row; if it has
   an amount it shows up as a skipped or extra row rather than being silently dropped.

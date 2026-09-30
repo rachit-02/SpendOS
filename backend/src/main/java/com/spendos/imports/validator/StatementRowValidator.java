@@ -35,6 +35,12 @@ public final class StatementRowValidator {
 
     private static final Pattern DEBIT_WORDS = Pattern.compile("(?i)^(dr|d|debit|withdrawal|w|out|expense|debit card)$");
     private static final Pattern CREDIT_WORDS = Pattern.compile("(?i)^(cr|c|credit|deposit|in|income|refund)$");
+    // Wallet and UPI statements (Google Pay, PhonePe, Paytm) have one unsigned amount column and say which
+    // way the money went in the narration instead.
+    private static final Pattern CREDIT_NARRATION =
+            Pattern.compile("(?i)\\b(received from|money received|credited by|refund received)\\b");
+    private static final Pattern DEBIT_NARRATION =
+            Pattern.compile("(?i)\\b(paid to|sent to|payment to|debited by)\\b");
 
     private StatementRowValidator() {
     }
@@ -145,6 +151,17 @@ public final class StatementRowValidator {
         }
         if (parsed.value().signum() < 0) {
             return Transaction.DEBIT;
+        }
+        // Nothing has said which way the money went, so read the narration. Credit first: a wallet credit
+        // reads "Received from <someone>" and then names the account it was paid to.
+        String description = row.cell(mapping.description());
+        if (description != null && !description.isBlank()) {
+            if (CREDIT_NARRATION.matcher(description).find()) {
+                return Transaction.CREDIT;
+            }
+            if (DEBIT_NARRATION.matcher(description).find()) {
+                return Transaction.DEBIT;
+            }
         }
         // Signed statements list spending as negative, so positives are income. Statements with only
         // positive amounts (e.g. card statements) list spending.

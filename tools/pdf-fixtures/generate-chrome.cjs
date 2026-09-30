@@ -135,6 +135,42 @@ function icici() {
   <p>Legends Used in Account Statement: INF - Internet Fund Transfer, BIL - Bill Payment.</p>`
 }
 
+// Wallet statement (Google Pay style): borderless three-column table, no debit/credit columns, the
+// direction of the money only in the narration, a date cell split over two lines, and header labels
+// spaced more widely than a word space, which is what splits "Date & time" into separate columns.
+function wallet() {
+  const rows = TXNS.slice(0, 26).map((t, i) => {
+    const credit = t[5] > 0
+    const who = credit ? 'Received from' : 'Paid to'
+    const name = t[2].split('/').filter((s) => /[a-z]/i.test(s)).pop().slice(0, 42)
+    return `<tr>
+      <td class="dt"><div class="d">${pad(t[0])} ${MONTHS[t[1] - 1]}, 2026</div><div class="t">0${(i % 9) + 1}:0${(i % 5) + 1} PM</div></td>
+      <td class="det"><div class="h">${who} ${name}</div><div class="s">UPI Transaction ID: 6213119067${10 + i}</div>
+        <div class="s">${credit ? 'Paid to' : 'Paid by'} Bank of Baroda 9384</div></td>
+      <td class="amt">&#8377;${inr(credit ? t[5] : t[4])}</td></tr>`
+  }).join('')
+  return `<style>
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #202124; }
+    table { border-collapse: collapse; width: 100%; }
+    thead { display: table-header-group; }
+    th { background: #f5f5f5; color: #5f6368; font-weight: normal; text-align: left; border: 0;
+         padding: 8pt 6pt; word-spacing: 5pt; }
+    th.r { text-align: right; }
+    td { border: 0; border-bottom: 0.5pt solid #dadce0; padding: 10pt 6pt; vertical-align: top; }
+    .dt { width: 92pt; } .d { font-weight: bold; } .t { color: #5f6368; margin-top: 3pt; }
+    .h { font-weight: bold; margin-bottom: 3pt; } .s { color: #5f6368; margin-top: 2pt; }
+    .amt { text-align: right; font-weight: bold; white-space: nowrap; }
+    .summary { background: #f4f6fc; padding: 12pt; display: flex; gap: 40pt; margin-bottom: 16pt; }
+  </style>
+  <div style="font-size:15pt;color:#5f6368">Wallet Pay</div>
+  <div>9000000000,<br>test.customer@example.com</div>
+  <div class="summary"><div>Transaction statement period<br>01 August 2026 - 20 September 2026</div>
+    <div>Sent<br>&#8377;1,00,000</div><div>Received<br>&#8377;1,70,000</div></div>
+  <table><thead><tr><th>Date &amp; time</th><th>Transaction details</th><th class="r">Amount</th></tr></thead>
+  <tbody>${rows}</tbody></table>
+  <p style="color:#5f6368;font-size:7pt">Note: this statement reflects payments made on the app.</p>`
+}
+
 // Image-only PDF: the table is rendered to a PNG first, so the PDF has no text layer (like a scan).
 async function scanned(browser) {
   const page = await browser.newPage({ viewport: { width: 900, height: 1200 } })
@@ -151,7 +187,7 @@ async function scanned(browser) {
   // middle line, with wrapped narration both above and below it.
   const centred = hdfc().replace('vertical-align: top', 'vertical-align: middle')
   for (const [name, html] of [['hdfc-style.pdf', hdfc()], ['sbi-style.pdf', sbi()], ['icici-style.pdf', icici()],
-    ['vertically-centred-rows.pdf', centred]]) {
+    ['vertically-centred-rows.pdf', centred], ['wallet-style.pdf', wallet()]]) {
     const page = await browser.newPage()
     await page.setContent(html)
     await page.pdf({ path: path.join(OUT, name), format: 'A4', margin: { top: '12mm', bottom: '12mm', left: '10mm', right: '10mm' },

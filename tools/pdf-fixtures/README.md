@@ -10,6 +10,7 @@ does the parsing, so the tests do not only exercise PDFBox's own output.
 | `sbi-style.pdf` | Chrome | dates wrapped over three lines ("1" / "Aug" / "2026"), separate value date, three pages |
 | `icici-style.pdf` | Chrome | serial-number column, narrow neighbouring columns, "(INR )" amount headers |
 | `vertically-centred-rows.pdf` | Chrome | same as hdfc-style with vertically centred cells (date on the middle line of a row) |
+| `wallet-style.pdf` | Chrome | borderless three columns, no debit/credit columns, direction only in the narration, two-line date cells, and header labels spaced wider than a word space |
 | `credit-card-style.pdf` | OpenPDF | one amount column with Dr/Cr suffixes |
 | `us-bank-style.pdf` | OpenPDF | MM/DD/YYYY dates, negatives in parentheses |
 | `no-transaction-table.pdf` | OpenPDF | a text PDF that is not a statement |

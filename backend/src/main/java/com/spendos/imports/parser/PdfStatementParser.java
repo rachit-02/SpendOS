@@ -393,7 +393,7 @@ public final class PdfStatementParser {
                     if (span > 1 && block.subList(1, span).stream().anyMatch(TableBuilder::hasValues)) {
                         break; // the next line is already data
                     }
-                    List<HeaderCell> cells = cluster(block);
+                    List<HeaderCell> cells = merge(cluster(block), lines.subList(i + span, lines.size()));
                     List<String> texts = cells.stream().map(HeaderCell::text).toList();
                     if (cells.size() >= 3 && CsvStatementParser.looksLikeHeader(texts)) {
                         ColumnMapping mapping = CsvStatementParser.mapHeader(texts);
@@ -457,6 +457,86 @@ public final class PdfStatementParser {
             return cells;
         }
 
+        /**
+         * Merges header cells that no column gutter separates. A label of several words ("Date & time")
+         * is clustered into one cell per word when the words are spaced more widely than a space, and each
+         * fragment would then become a column whose edge falls inside the rows' own text, cutting
+         * "01 Aug, 2026" into "01 Au" | "g," | "2026". Two header cells only start different columns when
+         * the rows below them leave a whitespace corridor in between.
+         */
+        static List<HeaderCell> merge(List<HeaderCell> cells, List<Line> body) {
+            if (cells.size() < 2 || body.isEmpty()) {
+                return cells;
+            }
+            float gutter = gutter(body);
+            List<HeaderCell> merged = new ArrayList<>();
+            HeaderCell pending = cells.get(0);
+            for (int i = 1; i < cells.size(); i++) {
+                HeaderCell next = cells.get(i);
+                if (corridor(pending.right(), next.left(), body, gutter)) {
+                    merged.add(pending);
+                    pending = next;
+                } else {
+                    pending = new HeaderCell(pending.text() + " " + next.text(), pending.left(), next.right());
+                }
+            }
+            merged.add(pending);
+            return merged;
+        }
+
+        /** The narrowest gap that can be a column gutter rather than the space between two words. */
+        private static float gutter(List<Line> lines) {
+            List<Float> spaces = new ArrayList<>();
+            for (Line line : lines) {
+                for (Glyph glyph : line.glyphs()) {
+                    if (glyph.space() > 0) {
+                        spaces.add(glyph.space());
+                    }
+                }
+            }
+            if (spaces.isEmpty()) {
+                return 1f;
+            }
+            spaces.sort(Float::compare);
+            return spaces.get(spaces.size() / 2);
+        }
+
+        /**
+         * True when the rows leave a whitespace corridor at least {@code gutter} wide between the two x
+         * positions. Measured per line rather than over all text at once: a summary table or a footnote
+         * below the transactions sits at its own x positions and would otherwise close a real gutter, so a
+         * corridor is allowed to be crossed by a few lines.
+         */
+        private static boolean corridor(float left, float right, List<Line> lines, float gutter) {
+            if (right - left < gutter) {
+                return false;
+            }
+            float step = Math.max(gutter / 4, 0.25f);
+            int samples = (int) Math.ceil((right - left) / step);
+            int[] crossings = new int[samples + 1];
+            for (Line line : lines) {
+                for (Glyph glyph : line.glyphs()) {
+                    if (glyph.right() <= left || glyph.x() >= right) {
+                        continue;
+                    }
+                    int from = Math.max(0, (int) Math.floor((glyph.x() - left) / step));
+                    int to = Math.min(samples, (int) Math.ceil((glyph.right() - left) / step));
+                    for (int i = from; i <= to; i++) {
+                        crossings[i]++;
+                    }
+                }
+            }
+            int tolerated = lines.size() / 10;
+            float free = 0;
+            for (int i = 0; i <= samples; i++) {
+                free = crossings[i] <= tolerated ? free + step : 0;
+                if (free >= gutter) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         static float[] midpoints(List<HeaderCell> cells) {
             float[] boundaries = new float[cells.size() - 1];
             for (int i = 0; i < boundaries.length; i++) {
@@ -490,6 +570,7 @@ public final class PdfStatementParser {
                     merged.add(new float[] {range[0], range[1]});
                 }
             }
+            float gutter = gutter(tableLines);
             for (int i = 0; i < boundaries.length; i++) {
                 float from = cells.get(i).center();
                 float to = cells.get(i + 1).center();
@@ -502,7 +583,9 @@ public final class PdfStatementParser {
                 for (int g = 1; g < merged.size(); g++) {
                     float gapLeft = Math.max(merged.get(g - 1)[1], from);
                     float gapRight = Math.min(merged.get(g)[0], to);
-                    if (gapRight <= gapLeft) {
+                    // A gap narrower than a gutter is the space between two letters or words, not a column
+                    // edge; taking it would cut a cell's text in half.
+                    if (gapRight - gapLeft < gutter) {
                         continue;
                     }
                     float overlap = Math.min(gapRight, regionRight) - Math.max(gapLeft, regionLeft);
