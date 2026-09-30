@@ -1,6 +1,8 @@
 package com.spendos.imports.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spendos.auth.domain.User;
+import com.spendos.auth.repository.UserRepository;
 import com.spendos.categories.engine.CategoryEngine;
 import com.spendos.categories.engine.CategoryEngine.Categorization;
 import com.spendos.common.exception.ApiException;
@@ -50,6 +52,7 @@ public class ImportProcessor {
     private static final Logger log = LoggerFactory.getLogger(ImportProcessor.class);
     static final int CHUNK_SIZE = 250;
 
+    private final UserRepository userRepository;
     private final ImportJobRepository jobRepository;
     private final ImportErrorRepository errorRepository;
     private final TransactionRepository transactionRepository;
@@ -63,12 +66,14 @@ public class ImportProcessor {
     private final ApplicationEventPublisher events;
     private final ObjectMapper objectMapper;
 
-    public ImportProcessor(ImportJobRepository jobRepository, ImportErrorRepository errorRepository,
+    public ImportProcessor(UserRepository userRepository,
+                           ImportJobRepository jobRepository, ImportErrorRepository errorRepository,
                            TransactionRepository transactionRepository, MerchantRepository merchantRepository,
                            UserMerchantMappingRepository mappingRepository, MerchantNormalizer merchantNormalizer,
                            MerchantService merchantService, CategoryEngine categoryEngine,
                            UserPreferencesService preferencesService, TransactionTemplate transactionTemplate,
                            ApplicationEventPublisher events, ObjectMapper objectMapper) {
+        this.userRepository = userRepository;
         this.jobRepository = jobRepository;
         this.errorRepository = errorRepository;
         this.transactionRepository = transactionRepository;
@@ -110,7 +115,9 @@ public class ImportProcessor {
 
         StatementRowValidator.Result validation = StatementRowValidator.validate(
                 parsed.rows(), parsed.mapping(), DateParser.orderFromHint(dateFormat), today);
-        List<Candidate> candidates = validation.candidates();
+        // Rows that only move the user's own money become transfers, so they are not counted as income
+        // on the way in and spending on the way out.
+        List<Candidate> candidates = SelfTransferDetector.mark(validation.candidates(), accountHolder(userId));
 
         DuplicateDetector.Result dedupe = candidates.isEmpty()
                 ? new DuplicateDetector.Result(List.of(), List.of())
@@ -172,6 +179,11 @@ public class ImportProcessor {
         }
         log.info("Import completed | jobId={} | imported={} | duplicates={} | invalid={}", jobId, importedTotal,
                 dedupe.duplicates().size(), validation.errors().size());
+    }
+
+    /** The user's own name, used to spot transfers to and from themselves; null when not set. */
+    private String accountHolder(UUID userId) {
+        return userRepository.findById(userId).map(User::getFullName).orElse(null);
     }
 
     private Transaction toTransaction(UUID userId, UUID accountId, String currency, Candidate candidate,

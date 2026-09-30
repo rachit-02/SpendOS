@@ -13,11 +13,15 @@ import com.spendos.support.TestAuth;
 import com.spendos.support.TestAuth.Session;
 import com.spendos.support.TestData;
 import com.spendos.transactions.domain.Account;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -41,6 +45,9 @@ class ImportIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private TestData testData;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     private Session session;
     private Account account;
@@ -133,6 +140,49 @@ class ImportIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data", hasSize(1)))
                 .andExpect(jsonPath("$.data[0].id").value(jobId))
                 .andExpect(jsonPath("$.pagination.totalItems").value(1));
+    }
+
+    /**
+     * Money the user moves between their own accounts is a transfer, not income on the way in and
+     * spending on the way out. The test user is "Test User".
+     */
+    @Test
+    void ownMoneyMovedBetweenAccountsIsImportedAsATransfer() throws Exception {
+        uploadAndWait("""
+                Date,Description,Amount
+                05-09-2026,Received from Mr TEST USER,2500
+                05-09-2026,Paid to NETFLIX.COM SI CHARGE,-649
+                06-09-2026,Received from Jyoti Shrivastava,1500
+                07-09-2026,Received from Test User,70000
+                07-09-2026,Paid to 2657,-70000
+                """);
+
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                SELECT t.raw_description, t.transaction_type, t.is_transfer, c.category_name
+                FROM transactions t LEFT JOIN categories c ON c.id = t.category_id
+                WHERE t.user_id = ? ORDER BY t.transaction_date, t.amount""", session.userId());
+
+        assertThat(rows).extracting(r -> r.get("raw_description") + " -> " + r.get("transaction_type"))
+                .containsExactlyInAnyOrder(
+                        "Received from Mr TEST USER -> transfer",
+                        "Paid to NETFLIX.COM SI CHARGE -> debit",
+                        "Received from Jyoti Shrivastava -> credit",
+                        "Received from Test User -> transfer",
+                        "Paid to 2657 -> transfer"); // the other leg of the 70,000 transfer
+        assertThat(rows).filteredOn(r -> "transfer".equals(r.get("transaction_type")))
+                .allSatisfy(r -> {
+                    assertThat(r.get("is_transfer")).isEqualTo(true);
+                    assertThat(r.get("category_name")).isEqualTo("Transfers");
+                });
+
+        // The income and spending totals leave the transfers out: 1,500 in and 649 out, not 74,000 and
+        // 70,649.
+        Map<String, Object> totals = jdbc.queryForMap("""
+                SELECT COALESCE(SUM(amount) FILTER (WHERE transaction_type = 'credit'), 0) AS income,
+                       COALESCE(SUM(amount) FILTER (WHERE transaction_type = 'debit'), 0) AS spending
+                FROM transactions WHERE user_id = ?""", session.userId());
+        assertThat((BigDecimal) totals.get("income")).isEqualByComparingTo("1500");
+        assertThat((BigDecimal) totals.get("spending")).isEqualByComparingTo("649");
     }
 
     @Test

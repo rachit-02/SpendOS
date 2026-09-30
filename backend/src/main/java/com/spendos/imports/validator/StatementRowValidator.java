@@ -152,8 +152,13 @@ public final class StatementRowValidator {
         if (parsed.value().signum() < 0) {
             return Transaction.DEBIT;
         }
-        // Nothing has said which way the money went, so read the narration. Credit first: a wallet credit
-        // reads "Received from <someone>" and then names the account it was paid to.
+        // Signed statements list spending as negative, so a positive amount there is income and the
+        // file's own convention has already answered.
+        if (fileHasNegatives) {
+            return Transaction.CREDIT;
+        }
+        // Amounts are unsigned, so read the narration. Credit first: a wallet credit reads
+        // "Received from <someone>" and then names the account it was paid to.
         String description = row.cell(mapping.description());
         if (description != null && !description.isBlank()) {
             if (CREDIT_NARRATION.matcher(description).find()) {
@@ -163,9 +168,8 @@ public final class StatementRowValidator {
                 return Transaction.DEBIT;
             }
         }
-        // Signed statements list spending as negative, so positives are income. Statements with only
-        // positive amounts (e.g. card statements) list spending.
-        return fileHasNegatives ? Transaction.CREDIT : Transaction.DEBIT;
+        // Statements with only positive amounts (e.g. card statements) list spending.
+        return Transaction.DEBIT;
     }
 
     private static String invalidOrMissing(RawRow row, ColumnMapping mapping) {

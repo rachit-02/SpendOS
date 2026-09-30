@@ -23,6 +23,17 @@ and the project uses [Semantic Versioning](https://semver.org/).
   rendered by Chrome, credit-card and US-bank layouts rendered by OpenPDF, plus broken and scanned
   PDFs; generators in `tools/pdf-fixtures`.
 
+- **Self-transfer detection on import.** Rows that only move the user's own money are stored as
+  transfers rather than as income on the way in and spending on the way out. A row counts as a transfer
+  when its counterparty is the account holder ("Received from Mr TEST CUSTOMER", matched against the
+  profile name, ignoring titles and case) or when the narration says "self transfer" or "own account".
+  The opposite leg of such a transfer is marked too when it has the same amount within a day and names
+  an account rather than a payee (a bare number, or a bank, card or account reference), so money that
+  arrives from your own account and leaves again is not counted as spending. Transfers use the existing
+  `transfer` type, so they are categorized as Transfers, stored with `is_transfer`, and left out of
+  every income and spending total. A single-word profile name must match the counterparty in full, and
+  a named payee is never paired, so spending of the same amount on the same day is not swallowed.
+
 ### Fixed
 
 - **Wallet and UPI statements (Google Pay, PhonePe, Paytm) rejected every row** with an error such as
@@ -32,8 +43,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   different columns when the rows below them leave a whitespace corridor in between, and a column edge
   is never placed in a gap narrower than a space. "Date & time" is also recognised as a date header.
 - Statements with a single unsigned amount column and no type column imported every row as spending,
-  including money received. When nothing else says which way the money went, the narration now decides
-  ("Received from ..." is money in, "Paid to ..." money out).
+  including money received. When the amounts carry no sign, the narration now decides ("Received
+  from ..." is money in, "Paid to ..." money out); a file that does use negative amounts keeps its own
+  convention.
 
 ### Known limitations of PDF import
 
