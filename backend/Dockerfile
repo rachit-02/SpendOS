@@ -3,13 +3,15 @@ FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /build
 
-# Resolve dependencies first so they are cached between source changes.
-# The cache mount needs an explicit id: some builders (Railway) reject one without it.
+# Resolve dependencies in their own layer: it is reused until pom.xml changes, so editing source
+# does not re-download the dependency tree. No BuildKit cache mount, deliberately: Railway's
+# builder only accepts ids of the form s/<service id>-<target>, which cannot be written portably
+# (its docs rule out variables in the id), and layer reuse already covers the common case.
 COPY pom.xml .
-RUN --mount=type=cache,id=maven-cache,target=/root/.m2 mvn -B -q dependency:go-offline
+RUN mvn -B -q dependency:go-offline
 
 COPY src ./src
-RUN --mount=type=cache,id=maven-cache,target=/root/.m2 mvn -B -q clean package -DskipTests
+RUN mvn -B -q clean package -DskipTests
 
 # Stage 2: Runtime stage
 FROM eclipse-temurin:17-jre-alpine
